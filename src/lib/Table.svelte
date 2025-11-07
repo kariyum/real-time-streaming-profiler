@@ -1,7 +1,6 @@
 <script>
     import { beforeUpdate } from "svelte";
 
-
     import Row from "./Row.svelte";
     /**
      * @type {Array<EnhancedMetric>}
@@ -9,11 +8,9 @@
     export let data;
     export let max;
     export let min;
-    beforeUpdate(
-        () => {
-            console.log("Table data", data);
-        }
-    )
+    beforeUpdate(() => {
+        console.log("Table data", data);
+    });
 </script>
 
 <table>
@@ -30,7 +27,13 @@
     {#if data}
         {#each data as item (item.id)}
             {#if !item.parent}
-                <Row currentItem={item} data={item.children} depth={0} max={max} min={min}/>
+                <Row
+                    currentItem={item}
+                    data={item.children}
+                    depth={0}
+                    {max}
+                    {min}
+                />
             {/if}
         {/each}
     {/if}
