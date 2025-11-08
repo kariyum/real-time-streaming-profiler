@@ -1,7 +1,12 @@
 <script lang="ts">
 	import type { EnhancedMetric } from '$lib/types';
 	import Row from './Row.svelte';
-	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
+	let {
+		data,
+		max,
+		min,
+		initShow
+	}: { data: EnhancedMetric[]; max: number; min: number; initShow: boolean } = $props();
 </script>
 
 <table>
@@ -19,7 +24,7 @@
 		{#if data}
 			{#each data as item (item.id)}
 				{#if !item.parent}
-					<Row currentItem={item} data={item.children} depth={0} {max} {min} />
+					<Row currentItem={item} data={item.children} depth={0} {max} {min} {initShow} />
 				{/if}
 			{/each}
 		{/if}

@@ -1,15 +1,39 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import DownArrow from './DownArrow.svelte';
 	import RightArrow from './RightArrow.svelte';
 	import Self from './Row.svelte';
+	import { browser } from '$app/environment';
+	import { RowToggleEvent } from '$lib/event';
+	let {
+		currentItem,
+		data,
+		depth,
+		min,
+		max,
+		initShow
+	}: { currentItem: any; data: any; depth: any; min: any; max: any; initShow: boolean } = $props();
 
-	let { currentItem, data, depth, min, max } = $props();
-
-	let showChildren = $state(false);
+	let showChildren = $state(initShow);
 	function toggle() {
-		console.log('TOGGLEINGIDJNGDI?');
 		showChildren = !showChildren;
+		initShow = false;
 	}
+
+	let toggleEvent: RowToggleEvent;
+
+	onMount(() => {
+		if (browser) {
+			toggleEvent = RowToggleEvent.getInstance();
+			toggleEvent.subscribeToggleOn(() => {
+				showChildren = true;
+				initShow = true;
+			});
+			toggleEvent.subscribeToggleOff(() => {
+				showChildren = false;
+			});
+		}
+	});
 
 	function format(n: number) {
 		try {
@@ -61,7 +85,7 @@
 {/if}
 {#if showChildren && children.length > 0}
 	{#each children as item (item.id)}
-		<Self currentItem={item} data={item.children} depth={depth + 1} {min} {max} />
+		<Self currentItem={item} data={item.children} depth={depth + 1} {min} {max} {initShow} />
 	{/each}
 {/if}
 
