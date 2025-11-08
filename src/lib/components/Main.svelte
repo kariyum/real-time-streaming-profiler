@@ -70,7 +70,7 @@
 		}
 	];
 
-	enhancedMetrics = processData(metrics);
+	enhancedMetrics = computeChildren(processData(metrics));
 	function connect() {
 		if (eventSource) {
 			eventSource.close();
@@ -89,7 +89,6 @@
 				if (event.data) {
 					const data = JSON.parse(event.data);
 					metrics.push(...data);
-					// console.log(metrics);
 					obsolete = true;
 				}
 			}
@@ -100,7 +99,7 @@
 		if (obsolete == true) {
 			console.log('UPDATING.', metrics.length);
 			let start = performance.now();
-			enhancedMetrics = processData(metrics);
+			enhancedMetrics = computeChildren(processData(metrics));
 			let end = performance.now();
 			console.log('TOOK: ', end - start);
 			obsolete = false;
@@ -122,9 +121,6 @@
 		}
 	}
 	let buttonLabel = $state('Copy!');
-    let enhancedMetricsWithChildren = $derived.by(() => {
-        return computeChildren(enhancedMetrics);
-    })
 </script>
 
 <main>
@@ -145,17 +141,22 @@
 			Connecting... ⌛ to {ip}
 		{:else if connected == 1}
 			Open ✅ {ip}
-		{:else if (connected == 2)}
+		{:else if connected == 2}
 			Closed
 		{:else if connected == 3}
 			<span style="color:red;">ERROR</span> 😱😱😱
 		{/if}
 	</h1>
-	<Table data={enhancedMetricsWithChildren} max={globalMax} min={globalMin} />
+	<Table
+		data={enhancedMetrics}
+		max={globalMax}
+		min={globalMin}
+		globalShowChildren={toggleChildren}
+	/>
 	<button
 		onclick={() => {
 			navigator.clipboard
-				.writeText(JSON.stringify(computeChildren(enhancedMetrics)))
+				.writeText(JSON.stringify(enhancedMetrics))
 				.then(() => {
 					// Provide user feedback
 					buttonLabel = 'Copied!';

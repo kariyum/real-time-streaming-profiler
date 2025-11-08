@@ -24,18 +24,15 @@
 {#if currentItem.children.length > 0}
 	<tr class="{depth != 0 ? 'greyed' : ''} arrow" onclick={() => toggle()}>
 		<td>
-			<div
-				style="display: flex; gap: 0.5rem; margin:0; padding: 0; margin-left: calc({Math.max(
-					0,
-					depth
-				) * 30}px)"
-			>
+			<div style:--ml={(depth * 30).toString() + 'px'} class="parent-row">
 				{#if showChildren}
 					<DownArrow></DownArrow>
 				{:else}
 					<RightArrow></RightArrow>
 				{/if}
-				{currentItem.id}
+				<div>
+					{currentItem.id}
+				</div>
 			</div>
 		</td>
 		<td>{currentItem.nbCalls}</td>
@@ -97,5 +94,12 @@
 
 	.greyed {
 		background-color: #f8f8f8;
+	}
+
+	.parent-row {
+		display: flex;
+		gap: 0.4rem;
+		padding: 0;
+		margin: 0 0 0 var(--ml);
 	}
 </style>
