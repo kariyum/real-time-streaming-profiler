@@ -45,7 +45,7 @@
 
 	thead {
 		position: sticky;
-		background: white;
+		background: var(--table-header);
 		top: 0;
 		padding: 0;
 		margin: 0;
@@ -54,7 +54,7 @@
 	th {
 		position: sticky;
 		top: 0px;
-		border: 1px solid #e3e3e3;
+		border: 1px solid var(--table-border);
 		text-align: left;
 		padding: 8px;
 	}

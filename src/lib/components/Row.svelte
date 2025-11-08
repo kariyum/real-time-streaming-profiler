@@ -91,7 +91,7 @@
 
 <style>
 	tr:hover {
-		background-color: rgb(196, 228, 255);
+		background-color: var(--table-hover);
 	}
 
 	.child {
@@ -105,7 +105,7 @@
 	}
 
 	td {
-		border: 1px solid #e3e3e3;
+		border: 1px solid var(--table-border);
 		text-align: left;
 		padding: 8px;
 		inline-size: 1000px;
@@ -113,11 +113,11 @@
 		max-width: 1000px;
 	}
 	.colored {
-		background-color: hsl(25, 100%, 50%, var(--rowcolor));
+		background-color: light-dark(hsl(25, 100%, 50%, var(--rowcolor)), hsl(10, 50%, 50%, var(--rowcolor)));
 	}
 
 	.greyed {
-		background-color: #f8f8f8;
+		background-color: var(--child-row);
 	}
 
 	.parent-row {
