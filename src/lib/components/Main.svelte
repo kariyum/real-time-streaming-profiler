@@ -33,63 +33,63 @@
 	let obsolete = $state(false);
 
 	let metrics: SingleMetric[] = $state([]);
-	// metrics = [
-	// 	{
-	// 		id: 'test01',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test03',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test01',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 7 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test02',
-	// 		parent: 'test01',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test022',
-	// 		parent: 'test01',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test02',
-	// 		parent: 'test01',
-	// 		start_end_times: [4 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test05',
-	// 		parent: 'test02',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test06',
-	// 		parent: 'test05',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test07',
-	// 		parent: 'test02',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test08',
-	// 		parent: 'test06',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test10',
-	// 		parent: 'test08',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	}
-	// ];
+	metrics = [
+		{
+			id: 'test01',
+			parent: null,
+			start_end_times: [1 * 1000000, 6 * 1000000]
+		},
+		{
+			id: 'test03',
+			parent: null,
+			start_end_times: [1 * 1000000, 6 * 1000000]
+		},
+		{
+			id: 'test01',
+			parent: null,
+			start_end_times: [1 * 1000000, 7 * 1000000]
+		},
+		{
+			id: 'test02',
+			parent: 'test01',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test022',
+			parent: 'test01',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test02',
+			parent: 'test01',
+			start_end_times: [4 * 1000000, 6 * 1000000]
+		},
+		{
+			id: 'test05',
+			parent: 'test02',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test06',
+			parent: 'test05',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test07',
+			parent: 'test02',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test08',
+			parent: 'test06',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		},
+		{
+			id: 'test10',
+			parent: 'test08',
+			start_end_times: [3 * 1000000, 5 * 1000000]
+		}
+	];
 
 	// setInterval(() => {
 	// 	metrics.push({
@@ -100,7 +100,7 @@
 	// 	enhancedMetrics = computeChildren(processData(metrics));
 	// }, 500);
 
-	// enhancedMetrics = computeChildren(processData(metrics));
+	enhancedMetrics = computeChildren(processData(metrics));
 	function connect() {
 		if (eventSource) {
 			eventSource.close();
@@ -150,14 +150,10 @@
 			eventSource = undefined;
 		}
 	}
-	let buttonLabel = $state('Copy!');
+	let buttonLabel = $state('Copy');
 </script>
 
 <main>
-	<!-- <ExpandableTableRow/> -->
-	<h1>Metrics streaming 101 （￣︶￣）</h1>
-	<input type="text" bind:value={ip} />
-	<input type="text" bind:value={service} />
 	<button onclick={() => connect()}>Connect</button>
 	<button
 		onclick={() => {
@@ -166,8 +162,24 @@
 		}}>Reset</button
 	>
 	<button onclick={disconnect}>Disconnect</button>
+	<button
+		onclick={() => {
+			navigator.clipboard
+				.writeText(JSON.stringify(enhancedMetrics))
+				.then(() => {
+					buttonLabel = 'Copied!';
+					setTimeout(() => {
+						buttonLabel = 'Copy';
+					}, 2000);
+				})
+				.catch((err) => {
+					console.error('Failed to copy text: ', err);
+				});
+		}}>{buttonLabel}</button
+	>
 	<button onclick={() => expand()} aria-label="expand"> Expand</button>
 	<button onclick={() => collapse()} aria-label="collapse">Collapse</button>
+
 	<h1>
 		{#if connected == 0}
 			Connecting... ⌛ to {ip}
@@ -180,61 +192,11 @@
 		{/if}
 	</h1>
 	<Table data={enhancedMetrics} max={globalMax} min={globalMin} {initShow} />
-	<button
-		onclick={() => {
-			navigator.clipboard
-				.writeText(JSON.stringify(enhancedMetrics))
-				.then(() => {
-					buttonLabel = 'Copied!';
-					setTimeout(() => {
-						buttonLabel = 'Copy!';
-					}, 2000);
-				})
-				.catch((err) => {
-					console.error('Failed to copy text: ', err);
-				});
-		}}>{buttonLabel}</button
-	>
+
 	<pre>
     <!-- {JSON.stringify(computeChildren(enhancedMetrics), null, 2)} -->
   </pre>
 </main>
 
 <style>
-	table {
-		font-family: arial, sans-serif;
-		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
-	}
-
-	table td {
-		white-space: nowrap;
-	}
-
-	thead {
-		position: sticky;
-		background: white;
-		top: 0;
-		padding: 0;
-		margin: 0;
-	}
-
-	th {
-		position: sticky;
-		top: 0px;
-		border: 1px solid #e3e3e3;
-		text-align: left;
-		padding: 8px;
-	}
-
-	td {
-		border: 1px solid #e3e3e3;
-		text-align: left;
-		padding: 8px;
-	}
-
-	tr:nth-child(even) {
-		background-color: #f0f0f0;
-	}
 </style>

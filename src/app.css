@@ -3,12 +3,46 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light only;
-  /* color: rgba(255, 255, 255, 0.87); */
-  /* background-color: #242424; */
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color-scheme: light dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --bg-color: light-dark(hsl(0, 0%, 100%), hsl(0, 0%, 9%));
+  --font-color: light-dark(rgb(0, 0, 0), hsl(0, 0%, 70%));
+  --table-border: light-dark(hsl(0, 0%, 85%), hsl(0, 0%, 20%));
+  --table-header: light-dark(hsl(0, 0%, 95%), hsl(0, 0%, 7%));
+  --table-hover: light-dark(rgb(196, 228, 255), hsl(207, 30%, 25%));
+  --child-row: light-dark(hsl(0, 0%, 97%), hsl(0, 0%, 14%));
+
+  --btn-bg: light-dark(hsl(0, 0%, 95%), hsl(0, 0%, 15%));
+  --btn-hover: light-dark(hsl(0, 0%, 90%), hsl(0, 0%, 20%));
+  --btn-border: light-dark(hsl(0, 0%, 80%), hsl(0, 0%, 30%));
+
+  --arrow-color: light-dark(red, hsl(0, 50%, 50%));
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--font-color);
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
+}
+
+button {
+  background-color: var(--btn-bg);
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid var(--btn-border);
+  outline: none;
+
+  &:hover {
+    background-color: var(--btn-hover);
+  }
 }

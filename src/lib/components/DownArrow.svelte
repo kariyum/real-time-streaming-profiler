@@ -14,6 +14,6 @@
 
 <style>
     svg {
-        color: red;
+        color: var(--arrow-color);
     }
 </style>
