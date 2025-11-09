@@ -3,14 +3,14 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const dev = process.argv.includes("dev");
 const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
-	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 	kit: {
 		prerender: {
 			handleUnseenRoutes: "warn"
 		},
-		adapter: adapter(),
+		adapter: adapter({
+			fallback: 'index.html'
+		}),
 		paths: {
 			base: dev ? "" : process.env.BASE_PATH,
 		},
