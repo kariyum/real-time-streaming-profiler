@@ -3,6 +3,7 @@
 	import { dashboardsRepo, Database, type Dashboard } from '$lib/db';
 	import { base64UrlEncode } from '$lib/utils';
 	import { onMount } from 'svelte';
+    import { base } from '$app/paths';
 
 	let { dashboard }: { dashboard: Dashboard } = $props();
 	function formatDate(createdAt: Date): string {
@@ -34,7 +35,7 @@
                     }
                 }}>Delete</button
             >
-            <a href={`/view/${base64UrlEncode(JSON.stringify(dashboard.metrics))}`}>View</a>
+            <a href={base + `/view/${base64UrlEncode(JSON.stringify(dashboard.metrics))}`}>View</a>
         </div>
 	</div>
 </div>

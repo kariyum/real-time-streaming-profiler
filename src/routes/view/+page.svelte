@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Dashboard from '$lib/components/Dashboard.svelte';
-
+    import { base } from '$app/paths';
 	let { data } = $props();
 
 	let dashboards = $derived(data.dashboards);
 </script>
 
-<a href="/" aria-label="home"
+<a href={base + "/"} aria-label="home"
 	><svg
 		xmlns="http://www.w3.org/2000/svg"
 		width="50"

@@ -6,7 +6,7 @@
 	import { browser } from '$app/environment';
 	import { RowToggleEvent } from '$lib/event.ts';
 	import { page } from '$app/state';
-
+	import { base } from '$app/paths';
 	let eventSource: EventSource | undefined = $state(undefined);
 	let ip = $state('localhost');
 
@@ -182,7 +182,7 @@
 				});
 		}}>{shareDashboard}</button
 	>
-	<a href="/view">View All Dashboards</a>
+	<a href={base + "/view"}>View All Dashboards</a>
 
 	<h1>
 		{#if connected == 0}
