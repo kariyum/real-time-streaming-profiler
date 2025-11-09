@@ -18,6 +18,7 @@
 <div class="theme">
 	<ThemeToggler />
 </div>
+<h1>Metrics streaming 101 （￣︶￣）</h1>
 {@render children()}
 
 <style>

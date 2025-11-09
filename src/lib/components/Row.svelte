@@ -113,7 +113,7 @@
 		max-width: 1000px;
 	}
 	.colored {
-		background-color: light-dark(hsl(25, 100%, 50%, var(--rowcolor)), hsl(10, 50%, 50%, var(--rowcolor)));
+		background-color: light-dark(hsl(25, 100%, 50%, var(--rowcolor)), hsl(25, 100%, 25%, var(--rowcolor)));
 	}
 
 	.greyed {

@@ -139,3 +139,48 @@ export function processData(data: SingleMetric[]) {
     return sorted;
     // return computeChildren(sorted);
 }
+
+
+export function base64UrlEncode(str: string) {
+    const utf8Bytes = new TextEncoder().encode(str);
+    const base64Encoded = btoa(String.fromCharCode(...utf8Bytes));
+
+    return base64Encoded
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+export function base64UrlDecode<T>(base64UrlData: string): T {
+    let base64String = base64UrlData.replace(/-/g, '+').replace(/_/g, '/');
+
+    while (base64String.length % 4) {
+        base64String += '=';
+    }
+
+    let jsonStringWithUnicode: string;
+    try {
+        const binaryString = atob(base64String);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        jsonStringWithUnicode = new TextDecoder().decode(bytes);
+
+    } catch (e) {
+        console.error("Failed to decode Base64URL data:", e);
+        throw new Error("Invalid sharable link data format.");
+    }
+
+    return JSON.parse(jsonStringWithUnicode) as T;
+}
+
+export function copy(text: string): Promise<void> {
+    return navigator.clipboard
+        .writeText(text);
+}
+
+
+function save() {
+    
+}

@@ -1,38 +1,27 @@
 <script lang="ts">
 	import Table from './Table.svelte';
-	import { processData, computeChildren } from '../utils.ts';
+	import { processData, computeChildren, copy, base64UrlEncode } from '../utils.ts';
 	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { RowToggleEvent } from '$lib/event.ts';
-
-	let initShow: boolean = $state(false);
-	let toggleEvent: RowToggleEvent;
-	onMount(() => {
-		if (browser) {
-			toggleEvent = RowToggleEvent.getInstance();
-		}
-	});
-
-	function expand() {
-		toggleEvent.toggleOn();
-		initShow = true;
-	}
-
-	function collapse() {
-		toggleEvent.toggleOff();
-		initShow = false;
-	}
+	import { page } from '$app/state';
 
 	let eventSource: EventSource | undefined = $state(undefined);
 	let ip = $state('localhost');
-	let service = $state('');
 
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
-	let connected = $state(-1);
+	let connected = $state(2);
 	let obsolete = $state(false);
 
 	let metrics: SingleMetric[] = $state([]);
+
+	onDestroy(() => {
+		if (browser && eventSource) {
+			eventSource.close();
+		}
+	});
+
 	metrics = [
 		{
 			id: 'test01',
@@ -151,6 +140,7 @@
 		}
 	}
 	let buttonLabel = $state('Copy');
+	let shareDashboard = $state('Share Dashboard!');
 </script>
 
 <main>
@@ -164,8 +154,7 @@
 	<button onclick={disconnect}>Disconnect</button>
 	<button
 		onclick={() => {
-			navigator.clipboard
-				.writeText(JSON.stringify(enhancedMetrics))
+			copy(JSON.stringify(enhancedMetrics))
 				.then(() => {
 					buttonLabel = 'Copied!';
 					setTimeout(() => {
@@ -177,8 +166,23 @@
 				});
 		}}>{buttonLabel}</button
 	>
-	<button onclick={() => expand()} aria-label="expand"> Expand</button>
-	<button onclick={() => collapse()} aria-label="collapse">Collapse</button>
+	<button
+		onclick={() => {
+			const data = base64UrlEncode(JSON.stringify(enhancedMetrics));
+			const link = page.url + `view/${data}`;
+			copy(link)
+				.then(() => {
+					shareDashboard = 'Link copied!';
+					setTimeout(() => {
+						shareDashboard = 'Share Dashboard!';
+					}, 2000);
+				})
+				.catch((err) => {
+					console.error('Failed to copy text: ', err);
+				});
+		}}>{shareDashboard}</button
+	>
+	<a href="/view">View All Dashboards</a>
 
 	<h1>
 		{#if connected == 0}
@@ -191,7 +195,7 @@
 			<span style="color:red;">ERROR</span> 😱😱😱
 		{/if}
 	</h1>
-	<Table data={enhancedMetrics} max={globalMax} min={globalMin} {initShow} />
+	<Table data={enhancedMetrics} max={globalMax} min={globalMin} />
 
 	<pre>
     <!-- {JSON.stringify(computeChildren(enhancedMetrics), null, 2)} -->
