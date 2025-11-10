@@ -13,7 +13,12 @@
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
 	let connected = $state(2);
 	let obsolete = $state(false);
-
+	$effect(() => {
+		eventSource?.readyState;
+		if (eventSource) {
+			connected = eventSource.readyState;
+		}
+	});
 	let metrics: SingleMetric[] = $state([]);
 
 	onDestroy(() => {
