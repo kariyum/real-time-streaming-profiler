@@ -4,12 +4,15 @@
 	import TableWithMinMax from '$lib/components/TableWithMinMax.svelte';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { onMount } from 'svelte';
-	let dashboards: DashboardEntity[] = [];
-	let linkData: string | null = null;
+	let dashboards: DashboardEntity[] = $state([]);
+	let linkData: string | null = $state(null);
 
 	onMount(async () => {
 		const db = (await Database.getInstance()).db;
 		dashboards = db ? await dashboardsRepo.getAllDashboards(db) : [];
+	});
+
+	$effect.pre(() => {
 		linkData = page.url.searchParams.get('data');
 	});
 </script>

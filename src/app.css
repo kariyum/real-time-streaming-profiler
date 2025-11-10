@@ -21,7 +21,7 @@
 
   --arrow-color: light-dark(red, hsl(0, 50%, 50%));
 
-  --dialog-bg: light-dark(hsl(0, 0%, 80%), hsl(0, 0%, 9%))
+  --dialog-bg: light-dark(hsl(0, 0%, 100%), hsl(0, 0%, 9%))
 }
 
 body {
