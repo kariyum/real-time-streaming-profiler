@@ -1,8 +1,24 @@
 <script lang="ts">
 	import Dashboard from '$lib/components/Dashboard.svelte';
-	import { type DashboardEntity } from '$lib/db';
+	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { base } from '$app/paths';
-	let { dashboards }: { dashboards: DashboardEntity[] } = $props();
+	import { onMount } from 'svelte';
+	let database: Database;
+	let dashboards: DashboardEntity[] = $state([]);
+
+	onMount(async () => {
+		database = await Database.getInstance();
+		dashboards = database.db ? await dashboardsRepo.getAllDashboards(database.db) : [];
+	});
+
+	async function deleteDashboard(id: number) {
+		if (database.db) {
+			await dashboardsRepo.deleteDashboard(database.db, id);
+			const newDashboards = await dashboardsRepo.getAllDashboards(database.db);
+			dashboards = newDashboards;
+		}
+		return Promise.reject('NO DB');
+	}
 </script>
 
 <a href={base + '/'} aria-label="home"
@@ -25,7 +41,7 @@
 {:else}
 	<div class="dashboards">
 		{#each dashboards as dashboard}
-			<Dashboard {dashboard}></Dashboard>
+			<Dashboard {dashboard} {deleteDashboard}></Dashboard>
 		{/each}
 	</div>
 {/if}

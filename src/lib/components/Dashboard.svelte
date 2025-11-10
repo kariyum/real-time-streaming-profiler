@@ -5,16 +5,15 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 
-	let { dashboard }: { dashboard: DashboardEntity } = $props();
+	let {
+		dashboard,
+		deleteDashboard
+	}: { dashboard: DashboardEntity; deleteDashboard: (id: number) => Promise<void> } = $props();
 	function formatDate(createdAt: Date): string {
 		const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
 		const day = createdAt.getDate().toString().padStart(2, '0');
 		return `${day}/${month}/${createdAt.getFullYear()} ${createdAt.getHours()}:${createdAt.getMinutes()}`;
 	}
-	let database: Database;
-	onMount(async () => {
-		database = await Database.getInstance();
-	});
 </script>
 
 <div class="card">
@@ -29,9 +28,8 @@
 			<button
 				style="margin-top: 1rem; margin-right:0.5rem;"
 				onclick={async () => {
-					if (database.db && dashboard.id) {
-						await dashboardsRepo.deleteDashboard(database.db, dashboard.id);
-						await invalidateAll();
+					if (dashboard.id) {
+						await deleteDashboard(dashboard.id);
 					}
 				}}>Delete</button
 			>

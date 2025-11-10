@@ -20,5 +20,5 @@
 {#if typeof linkData == 'string'}
 	<TableWithMinMax data={linkData}></TableWithMinMax>
 {:else}
-	<Dashboards {dashboards}></Dashboards>
+	<Dashboards></Dashboards>
 {/if}
