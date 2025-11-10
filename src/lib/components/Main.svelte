@@ -22,63 +22,63 @@
 		}
 	});
 
-	metrics = [
-		{
-			id: 'test01',
-			parent: null,
-			start_end_times: [1 * 1000000, 6 * 1000000]
-		},
-		{
-			id: 'test03',
-			parent: null,
-			start_end_times: [1 * 1000000, 6 * 1000000]
-		},
-		{
-			id: 'test01',
-			parent: null,
-			start_end_times: [1 * 1000000, 7 * 1000000]
-		},
-		{
-			id: 'test02',
-			parent: 'test01',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test022',
-			parent: 'test01',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test02',
-			parent: 'test01',
-			start_end_times: [4 * 1000000, 6 * 1000000]
-		},
-		{
-			id: 'test05',
-			parent: 'test02',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test06',
-			parent: 'test05',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test07',
-			parent: 'test02',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test08',
-			parent: 'test06',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		},
-		{
-			id: 'test10',
-			parent: 'test08',
-			start_end_times: [3 * 1000000, 5 * 1000000]
-		}
-	];
+	// metrics = [
+	// 	{
+	// 		id: 'test01',
+	// 		parent: null,
+	// 		start_end_times: [1 * 1000000, 6 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test03',
+	// 		parent: null,
+	// 		start_end_times: [1 * 1000000, 6 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test01',
+	// 		parent: null,
+	// 		start_end_times: [1 * 1000000, 7 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test02',
+	// 		parent: 'test01',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test022',
+	// 		parent: 'test01',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test02',
+	// 		parent: 'test01',
+	// 		start_end_times: [4 * 1000000, 6 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test05',
+	// 		parent: 'test02',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test06',
+	// 		parent: 'test05',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test07',
+	// 		parent: 'test02',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test08',
+	// 		parent: 'test06',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	},
+	// 	{
+	// 		id: 'test10',
+	// 		parent: 'test08',
+	// 		start_end_times: [3 * 1000000, 5 * 1000000]
+	// 	}
+	// ];
 
 	// setInterval(() => {
 	// 	metrics.push({
@@ -89,7 +89,7 @@
 	// 	enhancedMetrics = computeChildren(processData(metrics));
 	// }, 500);
 
-	enhancedMetrics = computeChildren(processData(metrics));
+	// enhancedMetrics = computeChildren(processData(metrics));
 	function connect() {
 		if (eventSource) {
 			eventSource.close();
