@@ -1,6 +1,6 @@
 import type { EnhancedMetric } from "./types";
 
-export type Dashboard = {
+export type DashboardEntity = {
     metrics: Array<EnhancedMetric>;
     description: string;
     title: string;
@@ -64,13 +64,13 @@ export class Database {
 }
 
 export const dashboardsRepo = {
-    getAllDashboards: async (db: IDBDatabase): Promise<Dashboard[]> => {
+    getAllDashboards: async (db: IDBDatabase): Promise<DashboardEntity[]> => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction("dashboards", "readonly");
             const objectStore = transaction.objectStore("dashboards").getAll();
 
             objectStore.onsuccess = () => {
-                resolve(objectStore.result as Dashboard[]);
+                resolve(objectStore.result as DashboardEntity[]);
             };
 
             objectStore.onerror = (event) => {
@@ -80,7 +80,7 @@ export const dashboardsRepo = {
     },
 
 
-    insertDashboard: (db: IDBDatabase, data: Dashboard) => {
+    insertDashboard: (db: IDBDatabase, data: DashboardEntity) => {
         return new Promise((resolve, reject) => {
             console.log("INSERTING", JSON.parse(JSON.stringify(data)));
             const transaction = db.transaction("dashboards", "readwrite");

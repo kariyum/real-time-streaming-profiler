@@ -5,7 +5,7 @@
 	import Row from './Row.svelte';
 	import { browser } from '$app/environment';
 	import DashboardForm from './DashboardForm.svelte';
-	import { dashboardsRepo, Database, type Dashboard } from '$lib/db';
+	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
 	let initShow: boolean = $state(false);
 	let toggleEvent: RowToggleEvent;
@@ -38,7 +38,7 @@
 			<button
 				onclick={async () => {
 					if (database.db) {
-						const dashboard: Dashboard = {
+						const dashboard: DashboardEntity = {
 							title: title,
 							description: description,
 							metrics: data,

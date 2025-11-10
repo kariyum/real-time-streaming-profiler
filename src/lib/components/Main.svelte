@@ -169,7 +169,7 @@
 	<button
 		onclick={() => {
 			const data = base64UrlEncode(JSON.stringify(enhancedMetrics));
-			const link = page.url + `view/${data}`;
+			const link = page.url + `view?data=${data}`;
 			copy(link)
 				.then(() => {
 					shareDashboard = 'Link copied!';
@@ -182,7 +182,7 @@
 				});
 		}}>{shareDashboard}</button
 	>
-	<a href={base + "/view"}>View All Dashboards</a>
+	<a href={base + '/view'}>View All Dashboards</a>
 
 	<h1>
 		{#if connected == 0}

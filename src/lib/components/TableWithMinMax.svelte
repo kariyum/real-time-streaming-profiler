@@ -3,9 +3,9 @@
 	import { type EnhancedMetric } from '$lib/types';
 	import { base64UrlDecode } from '$lib/utils';
 
-	let { data } = $props();
+	let { data }: { data: string } = $props();
 	let metrics: Array<EnhancedMetric> = $derived.by(() => {
-		return base64UrlDecode<Array<EnhancedMetric>>(data.metrics);
+		return base64UrlDecode<Array<EnhancedMetric>>(data);
 	});
 	let globalMax: number = $derived.by(() => {
 		return Math.max(...metrics.map((a) => a.cpu_time));
