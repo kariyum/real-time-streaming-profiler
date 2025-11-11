@@ -6,6 +6,7 @@
 	import { browser } from '$app/environment';
 	import DashboardForm from './DashboardForm.svelte';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
+	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
 	let initShow: boolean = $state(false);
 	let toggleEvent: RowToggleEvent;
@@ -37,14 +38,20 @@
 		<div style="margin-left: auto; width: fit-content">
 			<button
 				onclick={async () => {
+					const dashboard: DashboardEntity = {
+						title: title,
+						description: description,
+						metrics: data,
+						date: new Date()
+					};
+
 					if (database.db) {
-						const dashboard: DashboardEntity = {
-							title: title,
-							description: description,
-							metrics: data,
-							date: new Date()
+						const dashboardFirestore: DashboardEntityFirestore = {
+							entity: dashboard,
+							firebaseId: undefined,
+							id: undefined
 						};
-						await dashboardsRepo.insertDashboard(database.db, dashboard);
+						await dashboardsRepo.insertDashboard(database.db, dashboardFirestore);
 						dialog.close();
 					}
 				}}>Save</button

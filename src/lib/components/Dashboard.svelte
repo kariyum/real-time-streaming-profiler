@@ -1,14 +1,22 @@
 <script lang="ts">
 	import { invalidate, invalidateAll } from '$app/navigation';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
-	import { base64UrlEncode } from '$lib/utils';
+	import { base64UrlEncode, copy } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
+	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
+	import firebase from '@firebase/app-compat';
+	import { resolve } from '$app/paths';
 
 	let {
 		dashboard,
-		deleteDashboard
-	}: { dashboard: DashboardEntity; deleteDashboard: (id: number) => Promise<void> } = $props();
+		deleteDashboard,
+		uploadDashboard
+	}: {
+		dashboard: DashboardEntityFirestore;
+		deleteDashboard: (id: number) => Promise<void>;
+		uploadDashboard: (dashboard: DashboardEntityFirestore) => Promise<void>;
+	} = $props();
 	function formatDate(createdAt: Date): string {
 		const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
 		const day = createdAt.getDate().toString().padStart(2, '0');
@@ -17,10 +25,10 @@
 </script>
 
 <div class="card">
-	<h2>{dashboard.title}</h2>
-	<div>{dashboard.description}</div>
+	<h2>{dashboard.entity.title}</h2>
+	<div>{dashboard.entity.description}</div>
 	<div>
-		{formatDate(new Date(dashboard.date.toString()))}
+		{formatDate(new Date(dashboard.entity.date.toString()))}
 	</div>
 
 	<div style="width: 100%;">
@@ -31,9 +39,21 @@
 					if (dashboard.id) {
 						await deleteDashboard(dashboard.id);
 					}
+					if (dashboard.firebaseId) {
+						await dashboardsRepoFirebase.delete(dashboard.firebaseId);
+					}
 				}}>Delete</button
 			>
-			<a href={base + `/view?data=${base64UrlEncode(JSON.stringify(dashboard.metrics))}`}>View</a>
+			{#if dashboard.firebaseId}
+				<button
+					onclick={() => {
+						copy(resolve('/share') + `?id=${dashboard.firebaseId}`);
+					}}>Copy share link</button
+				>
+			{:else}
+				<button onclick={async () => uploadDashboard(dashboard)}>Upload</button>
+			{/if}
+			<a href={resolve('/view') + `?local_id=${dashboard.id}`}>View</a>
 		</div>
 	</div>
 </div>

@@ -157,36 +157,6 @@
 		}}>Reset</button
 	>
 	<button onclick={disconnect}>Disconnect</button>
-	<button
-		onclick={() => {
-			copy(JSON.stringify(enhancedMetrics))
-				.then(() => {
-					buttonLabel = 'Copied!';
-					setTimeout(() => {
-						buttonLabel = 'Copy';
-					}, 2000);
-				})
-				.catch((err) => {
-					console.error('Failed to copy text: ', err);
-				});
-		}}>{buttonLabel}</button
-	>
-	<button
-		onclick={() => {
-			const data = base64UrlEncode(JSON.stringify(enhancedMetrics));
-			const link = page.url + `view?data=${data}`;
-			copy(link)
-				.then(() => {
-					shareDashboard = 'Link copied!';
-					setTimeout(() => {
-						shareDashboard = 'Share Dashboard!';
-					}, 2000);
-				})
-				.catch((err) => {
-					console.error('Failed to copy text: ', err);
-				});
-		}}>{shareDashboard}</button
-	>
 	<a href={base + '/view'}>View All Dashboards</a>
 
 	<h1>

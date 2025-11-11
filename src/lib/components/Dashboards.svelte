@@ -3,21 +3,37 @@
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	let database: Database;
-	let dashboards: DashboardEntity[] = $state([]);
+	let dashboards: DashboardEntityFirestore[] = $state([]);
 
 	onMount(async () => {
 		database = await Database.getInstance();
 		dashboards = database.db ? await dashboardsRepo.getAllDashboards(database.db) : [];
 	});
 
-	async function deleteDashboard(id: number) {
-		if (database.db) {
+	async function deleteDashboard(id: number): Promise<void> {
+		if (database && database.db) {
 			await dashboardsRepo.deleteDashboard(database.db, id);
 			const newDashboards = await dashboardsRepo.getAllDashboards(database.db);
 			dashboards = newDashboards;
+			return Promise.resolve();
 		}
 		return Promise.reject('NO DB');
+	}
+
+	async function uploadDashboard(dashboard: DashboardEntityFirestore) {
+		const firebaseId = await dashboardsRepoFirebase.add(dashboard.entity);
+		const newEntity = {
+			entity: dashboard.entity,
+			id: dashboard.id,
+			firebaseId: firebaseId
+		};
+		if (database.db && dashboard.id) {
+			await dashboardsRepo.updateDashboard(database.db, newEntity);
+			const newDashboards = await dashboardsRepo.getAllDashboards(database.db);
+			dashboards = newDashboards;
+		}
 	}
 </script>
 
@@ -41,7 +57,7 @@
 {:else}
 	<div class="dashboards">
 		{#each dashboards as dashboard}
-			<Dashboard {dashboard} {deleteDashboard}></Dashboard>
+			<Dashboard {dashboard} {deleteDashboard} {uploadDashboard}></Dashboard>
 		{/each}
 	</div>
 {/if}
