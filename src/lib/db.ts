@@ -1,3 +1,4 @@
+import type { DashboardEntityFirestore } from "./firebase";
 import type { EnhancedMetric } from "./types";
 
 export type DashboardEntity = {
@@ -5,7 +6,6 @@ export type DashboardEntity = {
     description: string;
     title: string;
     date: Date;
-    id?: number;
 }
 
 export class Database {
@@ -13,7 +13,7 @@ export class Database {
     db: IDBDatabase | undefined;
 
     private constructor(resolve: (db: Database) => void) {
-        const DBOpenRequest: IDBOpenDBRequest = indexedDB.open("metrics", 1);
+        const DBOpenRequest: IDBOpenDBRequest = indexedDB.open("metrics", 2);
         DBOpenRequest.onerror = (event) => {
             console.error("DBOpenRequest.onerror", event);
         };
@@ -26,11 +26,13 @@ export class Database {
 
         DBOpenRequest.onupgradeneeded = (event: IDBVersionChangeEvent) => {
             this.db = DBOpenRequest.result;
-
+            const upgradeTransaction = DBOpenRequest.transaction;
             this.db.onerror = (event) => {
                 console.log('Error loading database.');
             };
-            this.migrate(DBOpenRequest.result, event.oldVersion, event.newVersion ?? undefined);
+            if (upgradeTransaction) {
+                this.migrate(DBOpenRequest.result, upgradeTransaction, event.oldVersion, event.newVersion ?? undefined);
+            }
         };
     }
 
@@ -44,12 +46,16 @@ export class Database {
         })
     }
 
-    private migrate(db: IDBDatabase, oldVersion: number, newVersion?: number) {
-        for (let start = oldVersion; start <= (newVersion ?? oldVersion); start++) {
+    private migrate(db: IDBDatabase, transaction: IDBTransaction, oldVersion: number, newVersion?: number) {
+        console.log("old version = ", oldVersion);
+        console.log("new version = ", newVersion);
+        for (let start = oldVersion + 1; start <= (newVersion ?? oldVersion); start++) {
             switch (start) {
                 case 1:
                     this.initSchema(db);
                     break;
+                case 2:
+                    this.updateEntities(transaction.objectStore("dashboards"))
                 default:
                     break;
             }
@@ -61,16 +67,81 @@ export class Database {
         db.createObjectStore('dashboards', { keyPath: 'id', autoIncrement: true });
     }
 
+    private async updateEntities(store: IDBObjectStore) {
+        type DashboardEntity = {
+            metrics: Array<EnhancedMetric>;
+            description: string;
+            title: string;
+            date: Date;
+            id?: number;
+        }
+
+        type DashboardEntityFirestore = {
+            entity: DashboardEntity,
+            firebaseId: string | undefined,
+            id: number | undefined
+        }
+        const allData: DashboardEntity[] = await new Promise((resolve, reject) => {
+            const result = store.getAll()
+            result.onerror = (event) => {
+                console.error("Failed to get all dashboards", event);
+                reject("Failed to get all dashboards");
+            }
+            result.onsuccess = () => {
+                console.log("Fetched all entities");
+                resolve(result.result as DashboardEntity[])
+            }
+        });
+
+
+        const _ = await new Promise((resolve, reject) => {
+            const result = store.clear()
+            result.onerror = (event) => {
+                console.error("Failed to clear entities", event);
+                reject("Failed to clear entities");
+            }
+            result.onsuccess = () => {
+                console.log("Cleared database");
+                resolve("Done")
+            }
+        });
+
+        return await Promise.all(
+            allData.map((entity) => {
+                const result: DashboardEntityFirestore = {
+                    entity: entity,
+                    firebaseId: undefined,
+                    id: undefined
+                };
+                return result
+            }).map((data) => {
+                return new Promise((resolve, reject) => {
+                    console.log("INSERTING", data.id);
+                    const result = store.add(JSON.parse(JSON.stringify(data)));
+                    result.onerror = (event) => {
+                        console.error("Failed to insert", data.entity.id);
+                        reject(event);
+                    }
+                    result.onsuccess = () => {
+                        console.log("Inserted", data.entity.id);
+                        resolve("OK");
+                    }
+
+                })
+
+            }));
+    }
+
 }
 
 export const dashboardsRepo = {
-    getAllDashboards: async (db: IDBDatabase): Promise<DashboardEntity[]> => {
+    getAllDashboards: async (db: IDBDatabase): Promise<DashboardEntityFirestore[]> => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction("dashboards", "readonly");
             const objectStore = transaction.objectStore("dashboards").getAll();
 
             objectStore.onsuccess = () => {
-                resolve(objectStore.result as DashboardEntity[]);
+                resolve(objectStore.result as DashboardEntityFirestore[]);
             };
 
             objectStore.onerror = (event) => {
@@ -80,7 +151,7 @@ export const dashboardsRepo = {
     },
 
 
-    insertDashboard: (db: IDBDatabase, data: DashboardEntity) => {
+    insertDashboard: (db: IDBDatabase, data: DashboardEntityFirestore) => {
         return new Promise((resolve, reject) => {
             console.log("INSERTING", JSON.parse(JSON.stringify(data)));
             const transaction = db.transaction("dashboards", "readwrite");
@@ -108,6 +179,35 @@ export const dashboardsRepo = {
             result.onsuccess = () => {
                 console.log("User program deleted");
                 resolve("OK")
+            }
+        });
+    },
+
+    updateDashboard: async (db: IDBDatabase, data: DashboardEntityFirestore) => {
+        const transaction = db.transaction("dashboards", "readwrite");
+        await new Promise((resolve, reject) => {
+            const result = transaction.objectStore("dashboards").put(JSON.parse(JSON.stringify(data)));
+            result.onerror = (event) => {
+                console.log("Failed to delete user program...", event);
+                reject("NOT OK");
+            }
+            result.onsuccess = () => {
+                console.log("User program deleted");
+                resolve("OK")
+            }
+        });
+    },
+
+    getById: async (db: IDBDatabase, id: number): Promise<DashboardEntityFirestore> => {
+        const transaction = db.transaction("dashboards", "readonly");
+        return await new Promise((resolve, reject) => {
+            const result = transaction.objectStore("dashboards").get(id)
+            result.onerror = (event) => {
+                console.log("Failed to delete user program...", event);
+                reject("NOT OK");
+            }
+            result.onsuccess = () => {
+                resolve(result.result as DashboardEntityFirestore);
             }
         });
     }

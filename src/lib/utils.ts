@@ -180,7 +180,3 @@ export function copy(text: string): Promise<void> {
         .writeText(text);
 }
 
-
-function save() {
-    
-}

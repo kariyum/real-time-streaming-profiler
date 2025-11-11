@@ -2,23 +2,16 @@
 	import { page } from '$app/state';
 	import Dashboards from '$lib/components/Dashboards.svelte';
 	import TableWithMinMax from '$lib/components/TableWithMinMax.svelte';
-	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
-	import { onMount } from 'svelte';
-	let dashboards: DashboardEntity[] = $state([]);
-	let linkData: string | null = $state(null);
-
-	onMount(async () => {
-		const db = (await Database.getInstance()).db;
-		dashboards = db ? await dashboardsRepo.getAllDashboards(db) : [];
-	});
+	import type { DashboardEntityFirestore } from '$lib/firebase';
+	let localId: string | null = $state(null);
 
 	$effect.pre(() => {
-		linkData = page.url.searchParams.get('data');
+		localId = page.url.searchParams.get('local_id');
 	});
 </script>
 
-{#if typeof linkData == 'string'}
-	<TableWithMinMax data={linkData}></TableWithMinMax>
+{#if typeof localId == 'string'}
+	<TableWithMinMax data={localId}></TableWithMinMax>
 {:else}
 	<Dashboards></Dashboards>
 {/if}
