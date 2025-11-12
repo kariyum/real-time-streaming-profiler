@@ -35,9 +35,9 @@ function computeCpuTime(start_end_times: number[][]): number {
     }
 
     total += currentEnd - sortedTimes[count][0];
-    // const average = total / sortedTimes.length;
+    const average = total / sortedTimes.length;
 
-    return total;
+    return average;
 }
 
 function sortByAverage(enchantedMetrics: EnhancedMetric[]): EnhancedMetric[] {
