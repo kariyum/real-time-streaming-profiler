@@ -8,6 +8,8 @@
 	import firebase from '@firebase/app-compat';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
+	import AsyncButton from './AsyncButton.svelte';
+	import CopyButton from './CopyButton.svelte';
 
 	let {
 		dashboard,
@@ -32,29 +34,45 @@
 		{formatDate(new Date(dashboard.entity.date.toString()))}
 	</div>
 
-	<div style="width: 100%;">
-		<div style="margin-left: auto; width:fit-content;">
-			<button
-				style="margin-top: 1rem; margin-right:0.5rem;"
-				onclick={async () => {
-					if (dashboard.id) {
-						await deleteDashboard(dashboard.id);
-					}
-					if (dashboard.firebaseId) {
-						await dashboardsRepoFirebase.delete(dashboard.firebaseId);
-					}
-				}}>Delete</button
-			>
-			{#if dashboard.firebaseId}
-				<button
-					onclick={() => {
-						copy($page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`);
-					}}>Copy share link</button
-				>
-			{:else}
-				<button onclick={async () => uploadDashboard(dashboard)}>Upload</button>
-			{/if}
-			<a href={resolve('/view') + `?local_id=${dashboard.id}`}>View</a>
+	<div style="width: 100%; margin-top: 2rem;">
+		<div
+			style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; row-gap: 0.5rem;"
+		>
+			<a href={resolve('/view') + `?local_id=${dashboard.id}`}>View from local</a>
+			<div>
+				<div style="width: fit-content; margin-left: auto;">
+					<button
+						onclick={async () => {
+							if (dashboard.id) {
+								await deleteDashboard(dashboard.id);
+							}
+							if (dashboard.firebaseId) {
+								await dashboardsRepoFirebase.delete(dashboard.firebaseId);
+							}
+						}}>Delete</button
+					>
+				</div>
+			</div>
+			<a href={resolve('/share') + `?id=${dashboard.firebaseId}`}>View from cloud</a>
+			<div>
+				<div style="width: fit-content; margin-left: auto;">
+					{#if dashboard.firebaseId}
+						<CopyButton
+							beforeCopyText={'Copy Share Link'}
+							text={$page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`}
+						></CopyButton>
+					{:else}
+						{#snippet idleView()}
+							Upload
+						{/snippet}
+						{#snippet endView()}
+							Uploaded!
+						{/snippet}
+						<AsyncButton onclick={async () => uploadDashboard(dashboard)} {idleView} {endView}
+						></AsyncButton>
+					{/if}
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
