@@ -53,7 +53,11 @@
 					>
 				</div>
 			</div>
-			<a href={resolve('/share') + `?id=${dashboard.firebaseId}`}>View from cloud</a>
+			{#if dashboard.firebaseId}
+				<a href={resolve('/share') + `?id=${dashboard.firebaseId}`}>View from cloud</a>
+			{:else}
+				<div></div>
+			{/if}
 			<div>
 				<div style="width: fit-content; margin-left: auto;">
 					{#if dashboard.firebaseId}
