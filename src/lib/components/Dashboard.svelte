@@ -7,6 +7,7 @@
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	import firebase from '@firebase/app-compat';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/stores';
 
 	let {
 		dashboard,
@@ -47,7 +48,7 @@
 			{#if dashboard.firebaseId}
 				<button
 					onclick={() => {
-						copy(resolve('/share') + `?id=${dashboard.firebaseId}`);
+						copy($page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`);
 					}}>Copy share link</button
 				>
 			{:else}
