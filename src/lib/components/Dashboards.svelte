@@ -22,7 +22,7 @@
 		return Promise.reject('NO DB');
 	}
 
-	async function uploadDashboard(dashboard: DashboardEntityFirestore) {
+	async function uploadDashboard(dashboard: DashboardEntityFirestore): Promise<void> {
 		const firebaseId = await dashboardsRepoFirebase.add(dashboard.entity);
 		const newEntity = {
 			entity: dashboard.entity,

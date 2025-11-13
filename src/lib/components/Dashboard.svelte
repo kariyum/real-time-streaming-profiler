@@ -29,7 +29,9 @@
 
 <div class="card">
 	<h2>{dashboard.entity.title}</h2>
-	<div>{dashboard.entity.description}</div>
+	<div>
+		<pre>{dashboard.entity.description}</pre>
+	</div>
 	<div>
 		{formatDate(new Date(dashboard.entity.date.toString()))}
 	</div>

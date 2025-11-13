@@ -5,17 +5,28 @@
 	import TableWithMinMax from '$lib/components/TableWithMinMax.svelte';
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	import type { EnhancedMetric } from '$lib/types';
+	import { untrack } from 'svelte';
 	let id: string | null = $state(null);
 	let metrics: Array<EnhancedMetric> = $state([]);
+	let isLoading = $state(false);
+	let errorMessage: string | undefined = $state(undefined);
+
 	$effect.pre(() => {
 		id = page.url.searchParams.get('id');
-		if (id) {
-			dashboardsRepoFirebase.readById(id).then((firebaseData) => {
-				if (firebaseData) {
-					metrics = firebaseData.metrics;
-				}
-			});
-		}
+		untrack(() => {
+			if (id) {
+				isLoading = true;
+				dashboardsRepoFirebase.readById(id).then((firebaseData) => {
+					isLoading = false;
+					if (firebaseData) {
+						metrics = firebaseData.metrics;
+						errorMessage = undefined;
+					} else {
+						errorMessage = 'Metrics does not exist';
+					}
+				});
+			}
+		});
 	});
 
 	let globalMax: number = $derived.by(() => {
@@ -27,7 +38,11 @@
 </script>
 
 {#if id}
-	<Table data={metrics} max={globalMax} min={globalMin} />
-{:else}
-	<Dashboards></Dashboards>
+	{#if isLoading}
+		<div>Fetching metrics...</div>
+	{:else if errorMessage}
+		<div>{errorMessage}</div>
+	{:else}
+		<Table data={metrics} max={globalMax} min={globalMin} />
+	{/if}
 {/if}

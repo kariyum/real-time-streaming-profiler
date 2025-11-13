@@ -39,7 +39,7 @@
 	.loader {
 		width: 0.9rem;
 		height: 0.9rem;
-		border: 5px dotted #fff;
+		border: 5px dotted var(--font-color);
 		display: inline-block;
 		position: relative;
 		box-sizing: border-box;
