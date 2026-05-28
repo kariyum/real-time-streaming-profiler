@@ -100,7 +100,7 @@
 			eventSource.close();
 			console.log('Closing last connection.');
 		}
-		eventSource = new EventSource(`http://localhost:8081/metrics-stream`);
+		eventSource = new EventSource(`http://localhost:8080/subscribe`);
 		eventSource.onerror = (event) => {
 			connected = 3;
 		};
