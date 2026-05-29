@@ -1,24 +1,22 @@
 <script lang="ts">
-	import Table from './Table.svelte';
-	import { processData, computeChildren, copy, base64UrlEncode } from '../utils.ts';
-	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
-	import { onDestroy, onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { RowToggleEvent } from '$lib/event.ts';
-	import { page } from '$app/state';
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
+	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
+	import { onDestroy } from 'svelte';
+	import { computeChildren, processData } from '../utils.ts';
+	import Table from './Table.svelte';
 	let eventSource: EventSource | undefined = $state(undefined);
 	let ip = $state('localhost');
 
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
-	let connected = $state(2);
-	let obsolete = $state(false);
-	$effect(() => {
-		eventSource?.readyState;
+	let connected = $derived.by(() => {
 		if (eventSource) {
-			connected = eventSource.readyState;
+			return eventSource.readyState;
+		} else {
+			return 2;
 		}
 	});
+	let obsolete = $state(false);
 	let metrics: SingleMetric[] = $state([]);
 
 	onDestroy(() => {
@@ -28,61 +26,17 @@
 	});
 
 	// metrics = [
-	// 	{
-	// 		id: 'test01',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test03',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test01',
-	// 		parent: null,
-	// 		start_end_times: [1 * 1000000, 7 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test02',
-	// 		parent: 'test01',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test022',
-	// 		parent: 'test01',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test02',
-	// 		parent: 'test01',
-	// 		start_end_times: [4 * 1000000, 6 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test05',
-	// 		parent: 'test02',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test06',
-	// 		parent: 'test05',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test07',
-	// 		parent: 'test02',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test08',
-	// 		parent: 'test06',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	},
-	// 	{
-	// 		id: 'test10',
-	// 		parent: 'test08',
-	// 		start_end_times: [3 * 1000000, 5 * 1000000]
-	// 	}
+	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
+	// 	{ id: 'test03', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
+	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 7 * 1000000] },
+	// 	{ id: 'test02', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test022', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test02', parent: 'test01', start_end_times: [4 * 1000000, 6 * 1000000] },
+	// 	{ id: 'test05', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test06', parent: 'test05', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test07', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test08', parent: 'test06', start_end_times: [3 * 1000000, 5 * 1000000] },
+	// 	{ id: 'test10', parent: 'test08', start_end_times: [3 * 1000000, 5 * 1000000] }
 	// ];
 
 	// setInterval(() => {
@@ -101,11 +55,13 @@
 			console.log('Closing last connection.');
 		}
 		eventSource = new EventSource(`http://localhost:8080/subscribe`);
-		eventSource.onerror = (event) => {
+		eventSource.onerror = (event: Event) => {
 			connected = 3;
+			console.log(event);
 		};
-		eventSource.onopen = (event) => {
+		eventSource.onopen = (event: Event) => {
 			connected = 1;
+			console.log(event);
 		};
 		eventSource.onmessage = (event) => {
 			if (eventSource) {
@@ -144,8 +100,6 @@
 			eventSource = undefined;
 		}
 	}
-	let buttonLabel = $state('Copy');
-	let shareDashboard = $state('Share Dashboard!');
 </script>
 
 <main>
@@ -157,7 +111,7 @@
 		}}>Reset</button
 	>
 	<button onclick={disconnect}>Disconnect</button>
-	<a href={base + '/view'}>View All Dashboards</a>
+	<a href={resolve('/view')}>View All Dashboards</a>
 
 	<h1>
 		{#if connected == 0}
@@ -172,9 +126,7 @@
 	</h1>
 	<Table data={enhancedMetrics} max={globalMax} min={globalMin} />
 
-	<pre>
-    <!-- {JSON.stringify(computeChildren(enhancedMetrics), null, 2)} -->
-  </pre>
+	<!-- <pre> {JSON.stringify(computeChildren(enhancedMetrics), null, 2)} </pre> -->
 </main>
 
 <style>
