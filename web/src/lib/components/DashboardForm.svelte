@@ -3,43 +3,74 @@
 		$props();
 </script>
 
-<div class="main">
-	<input
-		class="noborder"
-		type="text"
-		name="title"
-		id="title"
-		placeholder="Title"
-		bind:value={title}
-	/>
-	<textarea
-		class="noborder"
-		name="description"
-		id="description"
-		placeholder="Description"
-		bind:value={description}
-	></textarea>
+<div class="form-fields">
+	<div class="field-group">
+		<label for="snapshot-title">Snapshot Title <span class="required">*</span></label>
+		<input
+			type="text"
+			name="title"
+			id="snapshot-title"
+			placeholder="e.g. Login flow — v1.4.2 profiling"
+			bind:value={title}
+		/>
+	</div>
+	<div class="field-group">
+		<label for="snapshot-description">Description <span class="optional">(optional)</span></label>
+		<textarea
+			name="description"
+			id="snapshot-description"
+			placeholder="Add notes about this snapshot — branch, environment, observations..."
+			bind:value={description}
+		></textarea>
+	</div>
 </div>
 
 <style>
-	.main {
+	.form-fields {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		justify-content: stretch;
-		margin-bottom: 1rem;
+		gap: 1.25rem;
 	}
 
-	input,
+	.field-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+
+		label {
+			font-size: 0.775rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: var(--font-secondary);
+		}
+	}
+
+	.required {
+		color: var(--danger);
+		font-weight: 700;
+	}
+
+	.optional {
+		color: var(--font-muted);
+		font-weight: 400;
+		text-transform: none;
+		letter-spacing: 0;
+		font-size: 0.7rem;
+	}
+
+	input {
+		width: 100%;
+		box-sizing: border-box;
+		height: 2.6rem;
+	}
+
 	textarea {
-		padding: 0.3rem;
-	}
-
-	.noborder:focus {
-		outline: none;
-	}
-
-	textarea {
-		height: 13rem;
+		width: 100%;
+		box-sizing: border-box;
+		height: 8rem;
+		resize: vertical;
+		line-height: 1.6;
+		font-size: 0.9rem;
 	}
 </style>

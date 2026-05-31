@@ -7,6 +7,7 @@
 	import DashboardForm from './DashboardForm.svelte';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
+
 	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
 	let initShow: boolean = $state(false);
 	let toggleEvent: RowToggleEvent;
@@ -14,6 +15,7 @@
 	let description: string = $state('');
 	let dialog: HTMLDialogElement;
 	let database: Database;
+
 	onMount(async () => {
 		if (browser) {
 			toggleEvent = RowToggleEvent.getInstance();
@@ -32,98 +34,305 @@
 	}
 </script>
 
-<dialog bind:this={dialog}>
-	<DashboardForm bind:title bind:description></DashboardForm>
-	<div style="width: 100%">
-		<div style="margin-left: auto; width: fit-content">
-			<button
-				onclick={async () => {
-					const dashboard: DashboardEntity = {
-						title: title,
-						description: description,
-						metrics: data,
-						date: new Date()
-					};
+<!-- Custom Styled Dialog Modal -->
+<dialog bind:this={dialog} class="dashboard-dialog animate-modal">
+	<div class="dialog-header">
+		<h3 class="dialog-title">Save Profile Snapshot</h3>
+		<p class="dialog-subtitle">Store this metrics snapshot to your local profile dashboard list.</p>
+	</div>
 
-					if (database.db) {
-						const dashboardFirestore: DashboardEntityFirestore = {
-							entity: dashboard,
-							firebaseId: undefined,
-							id: undefined
-						};
-						await dashboardsRepo.insertDashboard(database.db, dashboardFirestore);
-						dialog.close();
-					}
-				}}>Save</button
+	<div class="dialog-body">
+		<DashboardForm bind:title bind:description></DashboardForm>
+	</div>
+
+	<div class="dialog-actions">
+		<button class="btn-cancel" onclick={() => dialog.close()} aria-label="Cancel"> Cancel </button>
+		<button
+			class="primary"
+			onclick={async () => {
+				const dashboard: DashboardEntity = {
+					title: title,
+					description: description,
+					metrics: data,
+					date: new Date()
+				};
+
+				if (database.db) {
+					const dashboardFirestore: DashboardEntityFirestore = {
+						entity: dashboard,
+						firebaseId: undefined,
+						id: undefined
+					};
+					await dashboardsRepo.insertDashboard(database.db, dashboardFirestore);
+					title = '';
+					description = '';
+					dialog.close();
+				}
+			}}
+			disabled={!title.trim()}
+			aria-label="Save"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
 			>
-			<button onclick={() => dialog.close()}>Cancel</button>
-		</div>
+				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+				<polyline points="17 21 17 13 7 13 7 21" />
+				<polyline points="7 3 7 8 15 8" />
+			</svg>
+			Save Snapshot
+		</button>
 	</div>
 </dialog>
 
-<button onclick={() => expand()} aria-label="expand"> Expand</button>
-<button onclick={() => collapse()} aria-label="collapse">Collapse</button>
-<button
-	onclick={() => {
-		dialog.showModal();
-	}}>Save</button
->
-<div style="margin-top: 1rem;"></div>
-<table>
-	<thead>
-		<tr>
-			<th>Function Name</th>
-			<th>Nb Calls</th>
-			<th>Average</th>
-			<th>Min</th>
-			<th>Max</th>
-			<th>CPU time</th>
-		</tr>
-	</thead>
-	<tbody>
-		{#if data}
-			{#each data as item (item.id)}
-				{#if !item.parent}
-					<Row currentItem={item} data={item.children} depth={0} {max} {min} {initShow} />
-				{/if}
-			{/each}
-		{/if}
-	</tbody>
-</table>
+<!-- Table Toolbar controls -->
+<div class="table-toolbar">
+	<div class="toolbar-left">
+		<button onclick={() => expand()} aria-label="expand all rows">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<polyline points="15 3 21 3 21 9" />
+				<polyline points="9 21 3 21 3 15" />
+				<line x1="21" y1="3" x2="14" y2="10" />
+				<line x1="3" y1="21" x2="10" y2="14" />
+			</svg>
+			Expand All
+		</button>
+		<button onclick={() => collapse()} aria-label="collapse all rows">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<polyline points="4 14 10 14 10 20" />
+				<polyline points="20 10 14 10 14 4" />
+				<line x1="14" y1="10" x2="21" y2="3" />
+				<line x1="10" y1="14" x2="3" y2="21" />
+			</svg>
+			Collapse All
+		</button>
+	</div>
+
+	<div class="toolbar-right">
+		<button
+			class="primary btn-save-dialog"
+			onclick={() => {
+				dialog.showModal();
+			}}
+			disabled={!data || data.length === 0}
+			aria-label="Save current snapshot"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+				<polyline points="17 21 17 13 7 13 7 21" />
+				<polyline points="7 3 7 8 15 8" />
+			</svg>
+			Save Snapshot
+		</button>
+	</div>
+</div>
+
+<!-- Table View wrapper -->
+<div class="table-wrapper">
+	<table>
+		<thead>
+			<tr>
+				<th class="col-func">Function Name</th>
+				<th class="col-num">Nb Calls</th>
+				<th class="col-num">Average (ms)</th>
+				<th class="col-num">Min (ms)</th>
+				<th class="col-num">Max (ms)</th>
+				<th class="col-cpu">CPU time / Ratio</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#if data}
+				{#each data as item (item.id)}
+					{#if !item.parent}
+						<Row currentItem={item} data={item.children} depth={0} {max} {min} {initShow} />
+					{/if}
+				{/each}
+			{/if}
+		</tbody>
+	</table>
+</div>
 
 <style>
-	table {
-		font-family: arial, sans-serif;
-		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
+	/* Toolbar styling */
+	.table-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+		gap: 1rem;
+		flex-wrap: wrap;
 	}
 
-	/* table {
-        white-space: nowrap;
-    } */
+	.toolbar-left,
+	.toolbar-right {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	/* Scrollable Table Container */
+	.table-wrapper {
+		width: 100%;
+		overflow-x: auto;
+		border: 1px solid var(--table-border);
+		border-radius: var(--radius-md);
+		background-color: var(--panel-bg);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+		transition:
+			border-color var(--transition-normal),
+			background-color var(--transition-normal);
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		border-spacing: 0;
+		text-align: left;
+	}
 
 	thead {
 		position: sticky;
-		background: var(--table-header);
 		top: 0;
-		padding: 0;
-		margin: 0;
+		z-index: 10;
+		background-color: var(--table-header);
+		border-bottom: 2px solid var(--table-border);
 	}
 
 	th {
-		position: sticky;
-		top: 0px;
-		border: 1px solid var(--table-border);
-		text-align: left;
-		padding: 8px;
+		padding: 0.85rem 1rem;
+		font-size: 0.725rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--font-secondary);
+		border-bottom: 1px solid var(--table-border);
+		white-space: nowrap;
 	}
 
-	dialog {
-		width: 30rem;
-		height: 20rem;
-		border: 2px solid var(--btn-border);
-		border-radius: 5px;
+	/* Alignments */
+	.col-func {
+		width: 40%;
+	}
+	.col-num {
+		text-align: right;
+		width: 10%;
+	}
+	.col-cpu {
+		width: 30%;
+		padding-left: 2rem;
+	}
+
+	/* Custom dialog styling replacing generic browser model styling */
+	dialog.dashboard-dialog {
+		border: 1px solid var(--panel-border);
+		border-radius: var(--radius-lg);
 		background-color: var(--dialog-bg);
+		color: var(--font-color);
+		box-shadow: var(--panel-shadow);
+		padding: 2rem;
+		max-width: 500px;
+		width: 90%;
+		box-sizing: border-box;
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		margin: 0;
+		overflow: visible;
+
+		&::backdrop {
+			background-color: var(--dialog-overlay);
+			backdrop-filter: blur(4px);
+		}
+	}
+
+	.dialog-header {
+		margin-bottom: 1.5rem;
+	}
+
+	.dialog-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin: 0 0 0.35rem 0;
+	}
+
+	.dialog-subtitle {
+		font-size: 0.85rem;
+		color: var(--font-secondary);
+		margin: 0;
+	}
+
+	.dialog-body {
+		margin-bottom: 1.75rem;
+	}
+
+	.dialog-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.75rem;
+
+		button {
+			padding: 0.5rem 1.25rem;
+		}
+	}
+
+	/* CSS Modal Fade-In animation */
+	.animate-modal[open] {
+		animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes scaleUp {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -48%) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+	}
+
+	/* Responsive tweaks */
+	@media (max-width: 640px) {
+		.table-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.toolbar-left,
+		.toolbar-right {
+			width: 100%;
+			button {
+				flex: 1;
+			}
+		}
 	}
 </style>

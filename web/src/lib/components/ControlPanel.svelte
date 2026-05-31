@@ -5,11 +5,26 @@
 	import { onDestroy } from 'svelte';
 	import { computeChildren, processData } from '../utils.ts';
 	import Table from './Table.svelte';
+	import { Play, RotateCcw, Square, Server } from '@lucide/svelte';
 
-	let eventSource: EventSource | undefined = $state(undefined);
-	let ip = $state('localhost:8080');
+	type Props = {
+		onMessage: (msg: any) => void;
+		ip: String;
+		onClose?: () => void;
+		onOpen?: () => void;
+		onReset?: () => void;
+	};
 
-	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
+	let {
+		onMessage,
+		ip = $bindable(),
+		onReset = () => {},
+		onClose = () => {},
+		onOpen = () => {}
+	}: Props = $props();
+
+	let eventSource: EventSource | undefined;
+
 	let connected = $derived.by(() => {
 		if (eventSource) {
 			return eventSource.readyState;
@@ -17,12 +32,11 @@
 			return 2;
 		}
 	});
-	let obsolete = $state(false);
-	let metrics: SingleMetric[] = $state([]);
 
 	onDestroy(() => {
 		if (browser && eventSource) {
 			eventSource.close();
+			onClose();
 		}
 	});
 
@@ -53,6 +67,7 @@
 	function connect() {
 		if (eventSource) {
 			eventSource.close();
+			onClose();
 			console.log('Closing last connection.');
 		}
 
@@ -65,7 +80,6 @@
 			url = url + ':8080';
 		}
 		if (!url.endsWith('/subscribe')) {
-			// Strip trailing slash if present
 			url = url.replace(/\/$/, '') + '/subscribe';
 		}
 
@@ -85,30 +99,11 @@
 				connected = eventSource.readyState;
 				if (event.data) {
 					const data = JSON.parse(event.data);
-					metrics.push(...data);
-					obsolete = true;
+					onMessage(data);
 				}
 			}
 		};
 	}
-
-	setInterval(() => {
-		if (obsolete == true) {
-			console.log('UPDATING.', metrics.length);
-			let start = performance.now();
-			enhancedMetrics = computeChildren(processData(metrics));
-			let end = performance.now();
-			console.log('TOOK: ', end - start);
-			obsolete = false;
-		}
-	}, 1000);
-
-	let globalMax: number = $derived.by(() => {
-		return enhancedMetrics.length > 0 ? Math.max(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
-	});
-	let globalMin: number = $derived.by(() => {
-		return enhancedMetrics.length > 0 ? Math.min(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
-	});
 
 	function disconnect() {
 		if (connected === 1 && eventSource) {
@@ -119,28 +114,64 @@
 	}
 </script>
 
-<main class="main-container">
-	<section class="table-section panel-card">
-		<div class="table-header-row">
-			{#if metrics.length > 0}
-				<span class="data-summary">
-					Showing {metrics.length} raw records grouped by function node
-				</span>
-			{/if}
-		</div>
+<section class="control-panel">
+	<div class="input-wrapper">
+		<span class="input-prefix">
+			<Server size="16" />
+		</span>
+		<input
+			id="host-ip"
+			type="text"
+			bind:value={ip}
+			placeholder="localhost:8080"
+			disabled={connected === 1 || connected === 0}
+		/>
+	</div>
 
-		{#if enhancedMetrics.length > 0}
-			<Table data={enhancedMetrics} max={globalMax} min={globalMin} />
-		{:else}
-			<div class="empty-state">
-				<h3>No profiling data available</h3>
-				<p>Connect to an active SSE endpoint to begin streaming program telemetry.</p>
-			</div>
-		{/if}
-	</section>
-</main>
+	{#if connected === 0}
+		<span class="badge badge-warning">
+			<span class="pulse-dot dot-warning"></span>
+			Connecting...
+		</span>
+	{:else if connected === 1}
+		<span class="badge badge-success">
+			<span class="pulse-dot dot-success"></span>
+			Connected & Live
+		</span>
+	{:else if connected === 2}
+		<span class="badge badge-neutral">
+			<span class="static-dot dot-neutral"></span>
+			Closed
+		</span>
+	{:else if connected === 3}
+		<span class="badge badge-danger">
+			<span class="pulse-dot dot-danger"></span>
+			Connection Error
+		</span>
+	{/if}
+
+	{#if connected !== 1 && connected !== 0}
+		<button class="primary" onclick={() => connect()} aria-label="Connect">
+			<Play size="16" />
+		</button>
+	{:else}
+		<button class="danger" onclick={disconnect} aria-label="Disconnect">
+			<Square />
+		</button>
+	{/if}
+
+	<button onclick={onReset} aria-label="Reset metrics">
+		<RotateCcw size="16" />
+	</button>
+</section>
 
 <style>
+	.control-panel {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
 	.main-container {
 		display: flex;
 		flex-direction: column;
@@ -190,7 +221,6 @@
 
 	.form-group {
 		display: flex;
-		flex-direction: column;
 		gap: 0.5rem;
 
 		label {
@@ -226,7 +256,6 @@
 
 	.status-section {
 		display: flex;
-		flex-direction: column;
 		gap: 0.5rem;
 	}
 
@@ -241,10 +270,9 @@
 	.status-badge-container {
 		display: flex;
 		align-items: center;
-		height: 2.6rem;
+		height: 100%;
 	}
 
-	/* Status Badge styles */
 	.badge {
 		display: inline-flex;
 		align-items: center;
@@ -317,7 +345,6 @@
 
 		button {
 			height: 100%;
-			flex: 1;
 		}
 	}
 

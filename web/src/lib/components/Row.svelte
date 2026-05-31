@@ -5,6 +5,7 @@
 	import Self from './Row.svelte';
 	import { browser } from '$app/environment';
 	import { RowToggleEvent } from '$lib/event';
+
 	let {
 		currentItem,
 		data,
@@ -36,50 +37,76 @@
 	});
 
 	function format(n: number) {
-		try {
-			return n.toFixed(3);
-		} catch {
-			return 0;
-		}
+		return n;
 	}
+
+	let ratio = $derived(max > 0 ? currentItem.cpu_time / max : 0);
+	let percent = $derived(Math.round(ratio * 100));
+
 	let children = $derived(data);
 </script>
 
 {#if currentItem.children.length > 0}
-	<tr class="{depth != 0 ? 'greyed' : ''} arrow" onclick={() => toggle()}>
-		<td>
-			<div style:--ml={(depth * 30).toString() + 'px'} class="parent-row">
-				{#if showChildren}
-					<DownArrow></DownArrow>
-				{:else}
-					<RightArrow></RightArrow>
+	<tr class="row-item has-children" class:depth-row={depth > 0} onclick={() => toggle()}>
+		<td class="col-func">
+			<div style:--ml={(depth * 24).toString() + 'px'} class="func-name-container">
+				<!-- Indent Guidelines -->
+				{#if depth > 0}
+					<span class="indent-guide" style:--left-offset="-14px"></span>
 				{/if}
-				<div>
-					{currentItem.id}
+
+				<span class="arrow-icon">
+					{#if showChildren}
+						<DownArrow></DownArrow>
+					{:else}
+						<RightArrow></RightArrow>
+					{/if}
+				</span>
+				<span class="func-id">{currentItem.id}</span>
+			</div>
+		</td>
+		<td class="col-num font-mono">{currentItem.nbCalls}</td>
+		<td class="col-num font-mono">{format(currentItem.average)}</td>
+		<td class="col-num font-mono">{format(currentItem.min)}</td>
+		<td class="col-num font-mono">{format(currentItem.max)}</td>
+		<td class="col-cpu">
+			<div class="cpu-progress-wrapper" style:--rowcolor={ratio}>
+				<div class="cpu-numbers font-mono">
+					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
+					<span class="cpu-pct">{percent}%</span>
+				</div>
+				<div class="cpu-bar-track">
+					<div class="cpu-bar-value" style="width: {percent}%"></div>
 				</div>
 			</div>
 		</td>
-		<td>{currentItem.nbCalls}</td>
-		<td>{format(currentItem.average)}</td>
-		<td>{format(currentItem.min)}</td>
-		<td>{format(currentItem.max)}</td>
-		<td class="colored" style="--rowcolor: {currentItem.cpu_time / max}">
-			{format(currentItem.cpu_time)} - {Math.floor((currentItem.cpu_time / max) * 100)}%
-		</td>
 	</tr>
 {:else}
-	<tr class={depth != 0 ? 'greyed' : ''}>
-		<td>
-			<div class={currentItem.parent ? 'child' : ''} style="--padding: calc({depth * 30}px);">
-				{currentItem.id}
+	<tr class="row-item" class:depth-row={depth > 0}>
+		<td class="col-func">
+			<div style:--ml={(depth * 24).toString() + 'px'} class="func-name-container">
+				{#if depth > 0}
+					<span class="indent-guide" style:--left-offset="-14px"></span>
+				{/if}
+				<!-- Spacer where the arrow would be to align text perfectly -->
+				<span class="arrow-spacer"></span>
+				<span class="func-id">{currentItem.id}</span>
 			</div>
 		</td>
-		<td>{currentItem.nbCalls}</td>
-		<td>{format(currentItem.average)}</td>
-		<td>{format(currentItem.min)}</td>
-		<td>{format(currentItem.max)}</td>
-		<td class="colored" style="--rowcolor: {currentItem.cpu_time / max}">
-			{format(currentItem.cpu_time)} - {Math.floor((currentItem.cpu_time / max) * 100)}%
+		<td class="col-num font-mono">{currentItem.nbCalls}</td>
+		<td class="col-num font-mono">{format(currentItem.average)}</td>
+		<td class="col-num font-mono">{format(currentItem.min)}</td>
+		<td class="col-num font-mono">{format(currentItem.max)}</td>
+		<td class="col-cpu">
+			<div class="cpu-progress-wrapper" style:--rowcolor={ratio}>
+				<div class="cpu-numbers font-mono">
+					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
+					<span class="cpu-pct">{percent}%</span>
+				</div>
+				<div class="cpu-bar-track">
+					<div class="cpu-bar-value" style="width: {percent}%"></div>
+				</div>
+			</div>
 		</td>
 	</tr>
 {/if}
@@ -90,40 +117,136 @@
 {/if}
 
 <style>
-	tr:hover {
-		background-color: var(--table-hover);
+	.row-item {
+		transition: background-color var(--transition-fast);
+		border-bottom: 1px solid var(--table-border);
+
+		&:hover {
+			background-color: var(--table-hover) !important;
+		}
 	}
 
-	.child {
-		margin: 0;
-		padding: 0;
-		margin-left: var(--padding);
-	}
-	.arrow {
+	.has-children {
 		cursor: pointer;
-		max-width: 1rem;
 	}
 
-	td {
-		border: 1px solid var(--table-border);
-		text-align: left;
-		padding: 8px;
-		inline-size: 1000px;
-		overflow-wrap: break-word;
-		max-width: 1000px;
-	}
-	.colored {
-		background-color: light-dark(hsl(25, 100%, 50%, var(--rowcolor)), hsl(25, 100%, 25%, var(--rowcolor)));
-	}
-
-	.greyed {
+	.depth-row {
 		background-color: var(--child-row);
 	}
 
-	.parent-row {
+	td {
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--table-border);
+		vertical-align: middle;
+	}
+
+	.col-func {
+		width: 40%;
+	}
+	.col-num {
+		text-align: right;
+		width: 10%;
+		color: var(--font-secondary);
+	}
+	.col-cpu {
+		width: 30%;
+		padding-left: 2rem;
+	}
+
+	.font-mono {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 0.85rem;
+	}
+
+	/* Hierarchy & Indent guides */
+	.func-name-container {
 		display: flex;
-		gap: 0.4rem;
-		padding: 0;
-		margin: 0 0 0 var(--ml);
+		align-items: center;
+		gap: 0.5rem;
+		position: relative;
+		margin-left: var(--ml);
+	}
+
+	.indent-guide {
+		position: absolute;
+		left: var(--left-offset);
+		top: -0.75rem;
+		bottom: -0.75rem;
+		width: 1px;
+		background-color: var(--table-border);
+	}
+
+	.arrow-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		transition: transform var(--transition-fast);
+		color: var(--arrow-color);
+
+		:global(svg) {
+			width: 1rem;
+			height: 1rem;
+		}
+	}
+
+	.arrow-spacer {
+		width: 1.25rem;
+	}
+
+	.func-id {
+		font-family: 'JetBrains Mono', monospace;
+		font-weight: 500;
+		font-size: 0.875rem;
+		color: var(--font-color);
+		word-break: break-all;
+	}
+
+	/* CPU Progress Bar Visualizer */
+	.cpu-progress-wrapper {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		max-width: 260px;
+		/* Add subtle color blend support in cells */
+		background-color: rgba(249, 115, 22, calc(var(--rowcolor) * 0.05));
+		border-radius: 4px;
+		padding: 0.25rem 0.5rem;
+	}
+
+	.cpu-numbers {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.775rem;
+		font-weight: 600;
+	}
+
+	.cpu-val {
+		color: var(--font-color);
+	}
+
+	.cpu-pct {
+		color: var(--primary);
+	}
+
+	.cpu-bar-track {
+		height: 4px;
+		width: 100%;
+		background-color: var(--cpu-bar-bg);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.cpu-bar-value {
+		height: 100%;
+		background: var(--cpu-bar-fill);
+		border-radius: 2px;
+		transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Soft highlight row indicator for high cpu time */
+	.row-item {
+		background-color: transparent;
 	}
 </style>
