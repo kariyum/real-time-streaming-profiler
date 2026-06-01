@@ -1,37 +1,6 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { resolve } from '$app/paths';
-	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
-	import { onDestroy } from 'svelte';
-	import { computeChildren, processData } from '../utils.ts';
-	import Table from './Table.svelte';
 	import { Play, RotateCcw, Square, Server } from '@lucide/svelte';
 	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
-
-	// metrics = [
-	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test03', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 7 * 1000000] },
-	// 	{ id: 'test02', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test022', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test02', parent: 'test01', start_end_times: [4 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test05', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test06', parent: 'test05', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test07', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test08', parent: 'test06', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test10', parent: 'test08', start_end_times: [3 * 1000000, 5 * 1000000] }
-	// ];
-
-	// setInterval(() => {
-	// 	metrics.push({
-	// 		id: 'test0' + Math.floor(Math.random() * 10).toString(),
-	// 		parent: null,
-	// 		start_end_times: [Math.random() * 10 * 1000000, Math.random() * 10 * 1000000]
-	// 	});
-	// 	enhancedMetrics = computeChildren(processData(metrics));
-	// }, 500);
-
-	// enhancedMetrics = computeChildren(processData(metrics));
 </script>
 
 <section class="control-panel">
@@ -44,33 +13,33 @@
 			type="text"
 			bind:value={streamState.ip}
 			placeholder="localhost:8080"
-			disabled={streamState.connected === 1 || streamState.connected === 0}
+			disabled={streamState.connected === 'connecting' || streamState.connected === 'open'}
 		/>
 	</div>
 
-	{#if streamState.connected === 0}
+	{#if streamState.connected === 'connecting'}
 		<span class="badge badge-warning">
 			<span class="pulse-dot dot-warning"></span>
 			Connecting...
 		</span>
-	{:else if streamState.connected === 1}
+	{:else if streamState.connected === "open"}
 		<span class="badge badge-success">
 			<span class="pulse-dot dot-success"></span>
 			Connected & Live
 		</span>
-	{:else if streamState.connected === 2}
+	{:else if streamState.connected === "closed"}
 		<span class="badge badge-neutral">
 			<span class="static-dot dot-neutral"></span>
 			Closed
 		</span>
-	{:else if streamState.connected === 3}
+	{:else if streamState.connected === "error"}
 		<span class="badge badge-danger">
 			<span class="pulse-dot dot-danger"></span>
 			Connection Error
 		</span>
 	{/if}
 
-	{#if streamState.connected !== 1 && streamState.connected !== 0}
+	{#if streamState.connected !== "open" && streamState.connected !== "connecting"}
 		<button class="primary" onclick={() => streamState.connect()} aria-label="Connect">
 			<Play size="16" />
 		</button>
@@ -90,66 +59,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
-	}
-
-	.main-container {
-		display: flex;
-		flex-direction: column;
-		gap: 1.75rem;
-		margin-top: 1rem;
-	}
-
-	.page-header {
-		margin-bottom: 0.5rem;
-	}
-
-	.page-title {
-		font-size: 1.875rem;
-		margin-bottom: 0.25rem;
-		background: linear-gradient(to right, var(--font-color), var(--font-secondary));
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
-
-	.page-subtitle {
-		font-size: 0.95rem;
-		color: var(--font-secondary);
-		margin: 0;
-	}
-
-	/* Panel card styles */
-	.panel-card {
-		background-color: var(--panel-bg);
-		border: 1px solid var(--panel-border);
-		border-radius: var(--radius-lg);
-		box-shadow: var(--panel-shadow);
-		padding: 1.5rem;
-		transition:
-			background-color var(--transition-normal),
-			border-color var(--transition-normal),
-			box-shadow var(--transition-normal);
-	}
-
-	/* Control Grid layout */
-	.control-grid {
-		display: grid;
-		grid-template-columns: 1.5fr 1fr 1fr;
-		align-items: flex-end;
-		gap: 1.5rem;
-	}
-
-	.form-group {
-		display: flex;
-		gap: 0.5rem;
-
-		label {
-			font-size: 0.775rem;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			color: var(--font-secondary);
-		}
 	}
 
 	.input-wrapper {
@@ -172,25 +81,6 @@
 		align-items: center;
 		color: var(--font-muted);
 		pointer-events: none;
-	}
-
-	.status-section {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.status-label {
-		font-size: 0.775rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--font-secondary);
-	}
-
-	.status-badge-container {
-		display: flex;
-		align-items: center;
-		height: 100%;
 	}
 
 	.badge {
@@ -224,7 +114,6 @@
 		border: 1px solid var(--panel-border);
 	}
 
-	/* Pulse DOTS */
 	.pulse-dot,
 	.static-dot {
 		width: 8px;
@@ -254,65 +143,6 @@
 	@keyframes pulse {
 		to {
 			box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
-		}
-	}
-
-	.actions-wrapper {
-		display: flex;
-		gap: 0.75rem;
-		justify-content: flex-end;
-		height: 2.6rem;
-
-		button {
-			height: 100%;
-		}
-	}
-
-	.table-header-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.data-summary {
-		font-size: 0.775rem;
-		color: var(--font-muted);
-		display: block;
-		margin-top: 0.25rem;
-	}
-
-	/* Empty state layout */
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 4rem 2rem;
-		text-align: center;
-		color: var(--font-secondary);
-
-		h3 {
-			font-size: 1.25rem;
-			margin: 1rem 0 0.5rem 0;
-		}
-
-		p {
-			max-width: 400px;
-			margin: 0;
-			font-size: 0.875rem;
-			color: var(--font-muted);
-		}
-	}
-
-	@media (max-width: 900px) {
-		.control-grid {
-			grid-template-columns: 1fr;
-			gap: 1rem;
-			align-items: stretch;
-		}
-
-		.actions-wrapper {
-			margin-top: 0.5rem;
 		}
 	}
 </style>

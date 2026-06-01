@@ -1,96 +1,23 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { resolve } from '$app/paths';
 	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
 	import { onDestroy } from 'svelte';
 	import { computeChildren, processData } from '../utils.ts';
+	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
 	import Table from './Table.svelte';
 
-	let eventSource: EventSource | undefined = $state(undefined);
-	let ip = $state('localhost:8080');
-
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
-	let connected = $derived.by(() => {
-		if (eventSource) {
-			return eventSource.readyState;
-		} else {
-			return 2;
-		}
-	});
 	let obsolete = $state(false);
 	let metrics: SingleMetric[] = $state([]);
+	let unsub: (() => void) | undefined;
 
-	onDestroy(() => {
-		if (browser && eventSource) {
-			eventSource.close();
-		}
+	unsub = streamState.subscribe((data) => {
+		metrics.push(...data);
+		obsolete = true;
 	});
 
-	// metrics = [
-	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test03', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 7 * 1000000] },
-	// 	{ id: 'test02', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test022', parent: 'test01', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test02', parent: 'test01', start_end_times: [4 * 1000000, 6 * 1000000] },
-	// 	{ id: 'test05', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test06', parent: 'test05', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test07', parent: 'test02', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test08', parent: 'test06', start_end_times: [3 * 1000000, 5 * 1000000] },
-	// 	{ id: 'test10', parent: 'test08', start_end_times: [3 * 1000000, 5 * 1000000] }
-	// ];
-
-	// setInterval(() => {
-	// 	metrics.push({
-	// 		id: 'test0' + Math.floor(Math.random() * 10).toString(),
-	// 		parent: null,
-	// 		start_end_times: [Math.random() * 10 * 1000000, Math.random() * 10 * 1000000]
-	// 	});
-	// 	enhancedMetrics = computeChildren(processData(metrics));
-	// }, 500);
-
-	// enhancedMetrics = computeChildren(processData(metrics));
-	function connect() {
-		if (eventSource) {
-			eventSource.close();
-			console.log('Closing last connection.');
-		}
-
-		// Ensure we format the URL correctly based on the ip state variable
-		let url = ip.trim();
-		if (!url.startsWith('http://') && !url.startsWith('https://')) {
-			url = 'http://' + url;
-		}
-		if (!url.includes(':') && !url.slice(8).includes('/')) {
-			url = url + ':8080';
-		}
-		if (!url.endsWith('/subscribe')) {
-			// Strip trailing slash if present
-			url = url.replace(/\/$/, '') + '/subscribe';
-		}
-
-		console.log('Connecting to SSE at:', url);
-		eventSource = new EventSource(url);
-
-		eventSource.onerror = (event: Event) => {
-			connected = 3;
-			console.log('SSE connection error:', event);
-		};
-		eventSource.onopen = (event: Event) => {
-			connected = 1;
-			console.log('SSE connection opened:', event);
-		};
-		eventSource.onmessage = (event) => {
-			if (eventSource) {
-				connected = eventSource.readyState;
-				if (event.data) {
-					const data = JSON.parse(event.data);
-					metrics.push(...data);
-					obsolete = true;
-				}
-			}
-		};
-	}
+	onDestroy(() => {
+		unsub?.();
+	});
 
 	setInterval(() => {
 		if (obsolete == true) {
@@ -109,14 +36,6 @@
 	let globalMin: number = $derived.by(() => {
 		return enhancedMetrics.length > 0 ? Math.min(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
 	});
-
-	function disconnect() {
-		if (connected === 1 && eventSource) {
-			eventSource.close();
-			connected = eventSource.readyState;
-			eventSource = undefined;
-		}
-	}
 </script>
 
 <main class="main-container">
@@ -148,26 +67,6 @@
 		margin-top: 1rem;
 	}
 
-	.page-header {
-		margin-bottom: 0.5rem;
-	}
-
-	.page-title {
-		font-size: 1.875rem;
-		margin-bottom: 0.25rem;
-		background: linear-gradient(to right, var(--font-color), var(--font-secondary));
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
-
-	.page-subtitle {
-		font-size: 0.95rem;
-		color: var(--font-secondary);
-		margin: 0;
-	}
-
-	/* Panel card styles */
 	.panel-card {
 		background-color: var(--panel-bg);
 		border: 1px solid var(--panel-border);
@@ -178,147 +77,6 @@
 			background-color var(--transition-normal),
 			border-color var(--transition-normal),
 			box-shadow var(--transition-normal);
-	}
-
-	/* Control Grid layout */
-	.control-grid {
-		display: grid;
-		grid-template-columns: 1.5fr 1fr 1fr;
-		align-items: flex-end;
-		gap: 1.5rem;
-	}
-
-	.form-group {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-
-		label {
-			font-size: 0.775rem;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			color: var(--font-secondary);
-		}
-	}
-
-	.input-wrapper {
-		position: relative;
-		display: flex;
-		align-items: center;
-
-		input {
-			width: 100%;
-			padding-left: 2.5rem;
-			box-sizing: border-box;
-			height: 2.6rem;
-		}
-	}
-
-	.input-prefix {
-		position: absolute;
-		left: 0.85rem;
-		display: flex;
-		align-items: center;
-		color: var(--font-muted);
-		pointer-events: none;
-	}
-
-	.status-section {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.status-label {
-		font-size: 0.775rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--font-secondary);
-	}
-
-	.status-badge-container {
-		display: flex;
-		align-items: center;
-		height: 2.6rem;
-	}
-
-	/* Status Badge styles */
-	.badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.8rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		border-radius: var(--radius-sm);
-	}
-
-	.badge-success {
-		background-color: var(--success-soft);
-		color: var(--success);
-	}
-
-	.badge-warning {
-		background-color: var(--warning-soft);
-		color: var(--warning);
-	}
-
-	.badge-danger {
-		background-color: var(--danger-soft);
-		color: var(--danger);
-	}
-
-	.badge-neutral {
-		background-color: var(--table-header);
-		color: var(--font-secondary);
-		border: 1px solid var(--panel-border);
-	}
-
-	/* Pulse DOTS */
-	.pulse-dot,
-	.static-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		display: inline-block;
-	}
-
-	.dot-success {
-		background-color: var(--success);
-	}
-	.dot-warning {
-		background-color: var(--warning);
-	}
-	.dot-danger {
-		background-color: var(--danger);
-	}
-	.dot-neutral {
-		background-color: var(--font-muted);
-	}
-
-	.pulse-dot {
-		box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.7);
-		animation: pulse 1.6s infinite cubic-bezier(0.66, 0, 0, 1);
-	}
-
-	@keyframes pulse {
-		to {
-			box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
-		}
-	}
-
-	.actions-wrapper {
-		display: flex;
-		gap: 0.75rem;
-		justify-content: flex-end;
-		height: 2.6rem;
-
-		button {
-			height: 100%;
-			flex: 1;
-		}
 	}
 
 	.table-header-row {
@@ -334,7 +92,6 @@
 		margin-top: 0.25rem;
 	}
 
-	/* Empty state layout */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
@@ -354,18 +111,6 @@
 			margin: 0;
 			font-size: 0.875rem;
 			color: var(--font-muted);
-		}
-	}
-
-	@media (max-width: 900px) {
-		.control-grid {
-			grid-template-columns: 1fr;
-			gap: 1rem;
-			align-items: stretch;
-		}
-
-		.actions-wrapper {
-			margin-top: 0.5rem;
 		}
 	}
 </style>

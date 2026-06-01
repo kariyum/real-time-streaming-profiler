@@ -1,8 +1,14 @@
-export type SingleMetric = {
-	id: string;
-	parent: string | null;
-	start_end_times: number[];
-};
+import { z } from 'zod';
+
+export const SingleMetricSchema = z.object({
+	id: z.string(),
+	parent: z.string().nullable(),
+	start_end_times: z.tuple([z.number(), z.number()]),
+});
+
+export const MetricsArraySchema = z.array(SingleMetricSchema);
+
+export type SingleMetric = z.infer<typeof SingleMetricSchema>;
 
 export type Metric = {
 	id: string;

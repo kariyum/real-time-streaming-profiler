@@ -1,52 +1,81 @@
+import type { SingleMetric } from './types.ts';
+import { MetricsArraySchema } from './types.ts';
+
+type ConnectionState = 'closed' | 'open' | 'error' | 'connecting';
+
+type Subscriber = (data: SingleMetric[]) => void;
+
 class EventStreamState {
 	ip = $state('localhost:8080');
-	connected = $state(2);
 	#eventSource: EventSource | undefined = $state();
+	connected: ConnectionState = $state('closed');
+	#subs: Subscriber[] = [];
 
 	connect = () => {
 		if (this.#eventSource) {
 			this.#eventSource.close();
-			console.log('Closing last connection.');
+			this.#eventSource = undefined;
 		}
 
 		let url = this.ip.trim();
 		if (!url.startsWith('http://') && !url.startsWith('https://')) {
 			url = 'http://' + url;
 		}
-		if (!url.includes(':') && !url.slice(8).includes('/')) {
-			url = url + ':8080';
-		}
-		if (!url.endsWith('/subscribe')) {
-			url = url.replace(/\/$/, '') + '/subscribe';
+
+		let parsed: URL;
+		try {
+			parsed = new URL(url);
+		} catch {
+			console.error('Invalid URL:', url);
+			return;
 		}
 
-		console.log('Connecting to SSE at:', url);
-		this.#eventSource = new EventSource(url);
+		if (!parsed.port) {
+			parsed.port = '8080';
+		}
+		if (!parsed.pathname.endsWith('/subscribe')) {
+			parsed.pathname = parsed.pathname.replace(/\/$/, '') + '/subscribe';
+		}
 
-		this.#eventSource.onerror = (event: Event) => {
-			this.connected = 3;
-			console.log('SSE connection error:', event);
+		this.connected = 'connecting';
+		this.#eventSource = new EventSource(parsed.toString());
+
+		this.#eventSource.onerror = () => {
+			this.connected = 'error';
 		};
-		this.#eventSource.onopen = (event: Event) => {
-			this.connected = 1;
-			console.log('SSE connection opened:', event);
+		this.#eventSource.onopen = () => {
+			this.connected = 'open';
 		};
-		this.#eventSource.onmessage = (event) => {
-			if (this.#eventSource) {
-				this.connected = this.#eventSource.readyState;
-				if (event.data) {
-					const data = JSON.parse(event.data);
+		this.#eventSource.onmessage = (event: MessageEvent) => {
+			if (event.data) {
+				const result = MetricsArraySchema.safeParse(JSON.parse(event.data));
+				if (result.success) {
+					this.#subs.forEach(f => f(result.data));
+				} else {
+					console.error('Invalid SSE data:', result.error.flatten());
 				}
 			}
 		};
 	};
 
 	disconnect = () => {
-		if (this.connected === 1 && this.#eventSource) {
+		if (this.#eventSource) {
 			this.#eventSource.close();
-			this.connected = this.#eventSource.readyState;
 			this.#eventSource = undefined;
 		}
+		this.connected = 'closed';
+	};
+
+	subscribe = (f: Subscriber): (() => void) => {
+		this.#subs.push(f);
+		return () => {
+			this.#subs = this.#subs.filter(sub => sub !== f);
+		};
+	};
+
+	destroy = () => {
+		this.disconnect();
+		this.#subs = [];
 	};
 }
 
