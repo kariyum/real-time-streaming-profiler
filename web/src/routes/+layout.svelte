@@ -9,7 +9,6 @@
 	let { children } = $props();
 
 	let currentPath = $derived(page.url.pathname);
-	let ip: String = $state('localhost:8080');
 </script>
 
 <svelte:head>
@@ -26,7 +25,7 @@
 <div class="app-layout">
 	<header class="app-header">
 		<div class="header-container">
-			<ControlPanel bind:ip onMessage={() => {}}></ControlPanel>
+			<ControlPanel></ControlPanel>
 
 			<nav class="nav-links">
 				<a

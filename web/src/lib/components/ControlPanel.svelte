@@ -6,39 +6,7 @@
 	import { computeChildren, processData } from '../utils.ts';
 	import Table from './Table.svelte';
 	import { Play, RotateCcw, Square, Server } from '@lucide/svelte';
-
-	type Props = {
-		onMessage: (msg: any) => void;
-		ip: String;
-		onClose?: () => void;
-		onOpen?: () => void;
-		onReset?: () => void;
-	};
-
-	let {
-		onMessage,
-		ip = $bindable(),
-		onReset = () => {},
-		onClose = () => {},
-		onOpen = () => {}
-	}: Props = $props();
-
-	let eventSource: EventSource | undefined;
-
-	let connected = $derived.by(() => {
-		if (eventSource) {
-			return eventSource.readyState;
-		} else {
-			return 2;
-		}
-	});
-
-	onDestroy(() => {
-		if (browser && eventSource) {
-			eventSource.close();
-			onClose();
-		}
-	});
+	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
 
 	// metrics = [
 	// 	{ id: 'test01', parent: null, start_end_times: [1 * 1000000, 6 * 1000000] },
@@ -64,54 +32,6 @@
 	// }, 500);
 
 	// enhancedMetrics = computeChildren(processData(metrics));
-	function connect() {
-		if (eventSource) {
-			eventSource.close();
-			onClose();
-			console.log('Closing last connection.');
-		}
-
-		// Ensure we format the URL correctly based on the ip state variable
-		let url = ip.trim();
-		if (!url.startsWith('http://') && !url.startsWith('https://')) {
-			url = 'http://' + url;
-		}
-		if (!url.includes(':') && !url.slice(8).includes('/')) {
-			url = url + ':8080';
-		}
-		if (!url.endsWith('/subscribe')) {
-			url = url.replace(/\/$/, '') + '/subscribe';
-		}
-
-		console.log('Connecting to SSE at:', url);
-		eventSource = new EventSource(url);
-
-		eventSource.onerror = (event: Event) => {
-			connected = 3;
-			console.log('SSE connection error:', event);
-		};
-		eventSource.onopen = (event: Event) => {
-			connected = 1;
-			console.log('SSE connection opened:', event);
-		};
-		eventSource.onmessage = (event) => {
-			if (eventSource) {
-				connected = eventSource.readyState;
-				if (event.data) {
-					const data = JSON.parse(event.data);
-					onMessage(data);
-				}
-			}
-		};
-	}
-
-	function disconnect() {
-		if (connected === 1 && eventSource) {
-			eventSource.close();
-			connected = eventSource.readyState;
-			eventSource = undefined;
-		}
-	}
 </script>
 
 <section class="control-panel">
@@ -122,45 +42,45 @@
 		<input
 			id="host-ip"
 			type="text"
-			bind:value={ip}
+			bind:value={streamState.ip}
 			placeholder="localhost:8080"
-			disabled={connected === 1 || connected === 0}
+			disabled={streamState.connected === 1 || streamState.connected === 0}
 		/>
 	</div>
 
-	{#if connected === 0}
+	{#if streamState.connected === 0}
 		<span class="badge badge-warning">
 			<span class="pulse-dot dot-warning"></span>
 			Connecting...
 		</span>
-	{:else if connected === 1}
+	{:else if streamState.connected === 1}
 		<span class="badge badge-success">
 			<span class="pulse-dot dot-success"></span>
 			Connected & Live
 		</span>
-	{:else if connected === 2}
+	{:else if streamState.connected === 2}
 		<span class="badge badge-neutral">
 			<span class="static-dot dot-neutral"></span>
 			Closed
 		</span>
-	{:else if connected === 3}
+	{:else if streamState.connected === 3}
 		<span class="badge badge-danger">
 			<span class="pulse-dot dot-danger"></span>
 			Connection Error
 		</span>
 	{/if}
 
-	{#if connected !== 1 && connected !== 0}
-		<button class="primary" onclick={() => connect()} aria-label="Connect">
+	{#if streamState.connected !== 1 && streamState.connected !== 0}
+		<button class="primary" onclick={() => streamState.connect()} aria-label="Connect">
 			<Play size="16" />
 		</button>
 	{:else}
-		<button class="danger" onclick={disconnect} aria-label="Disconnect">
+		<button class="danger" onclick={streamState.disconnect} aria-label="Disconnect">
 			<Square />
 		</button>
 	{/if}
 
-	<button onclick={onReset} aria-label="Reset metrics">
+	<button onclick={() => {}} aria-label="Reset metrics">
 		<RotateCcw size="16" />
 	</button>
 </section>
