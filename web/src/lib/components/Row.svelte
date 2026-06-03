@@ -15,7 +15,7 @@
 		initShow
 	}: { currentItem: any; data: any; depth: any; min: any; max: any; initShow: boolean } = $props();
 
-	let showChildren = $state(initShow);
+	let showChildren = $derived(initShow);
 	function toggle() {
 		showChildren = !showChildren;
 		initShow = false;
@@ -37,7 +37,7 @@
 	});
 
 	function format(n: number) {
-		return n;
+		return Math.ceil(n);
 	}
 
 	let ratio = $derived(max > 0 ? currentItem.cpu_time / max : 0);
@@ -50,10 +50,9 @@
 	<tr class="row-item has-children" class:depth-row={depth > 0} onclick={() => toggle()}>
 		<td class="col-func">
 			<div style:--ml={(depth * 24).toString() + 'px'} class="func-name-container">
-				<!-- Indent Guidelines -->
-				{#if depth > 0}
+				<!-- {#if depth > 0}
 					<span class="indent-guide" style:--left-offset="-14px"></span>
-				{/if}
+				{/if} -->
 
 				<span class="arrow-icon">
 					{#if showChildren}
@@ -75,9 +74,6 @@
 					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
 					<span class="cpu-pct">{percent}%</span>
 				</div>
-				<div class="cpu-bar-track">
-					<div class="cpu-bar-value" style="width: {percent}%"></div>
-				</div>
 			</div>
 		</td>
 	</tr>
@@ -88,7 +84,6 @@
 				{#if depth > 0}
 					<span class="indent-guide" style:--left-offset="-14px"></span>
 				{/if}
-				<!-- Spacer where the arrow would be to align text perfectly -->
 				<span class="arrow-spacer"></span>
 				<span class="func-id">{currentItem.id}</span>
 			</div>
@@ -102,9 +97,6 @@
 				<div class="cpu-numbers font-mono">
 					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
 					<span class="cpu-pct">{percent}%</span>
-				</div>
-				<div class="cpu-bar-track">
-					<div class="cpu-bar-value" style="width: {percent}%"></div>
 				</div>
 			</div>
 		</td>

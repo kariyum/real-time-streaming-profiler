@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { base64UrlEncode, copy } from '$lib/utils';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	import AsyncButton from './AsyncButton.svelte';
 	import CopyButton from './CopyButton.svelte';
-	import { onMount } from 'svelte';
+	import { Clock, Cloud, CloudUpload, Eye, Trash } from '@lucide/svelte';
 
 	let {
 		dashboard,
@@ -27,23 +26,11 @@
 </script>
 
 <div class="dashboard-card">
-	<!-- Card Top/Header with Title & Delete action -->
 	<div class="card-header">
 		<div class="header-left">
 			<h2 class="card-title" title={dashboard.entity.title}>{dashboard.entity.title}</h2>
 			<div class="card-date">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="12"
-					height="12"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<polyline points="12 6 12 12 16 14" />
-				</svg>
+				<Clock size="14" />
 				{formatDate(new Date(dashboard.entity.date.toString()))}
 			</div>
 		</div>
@@ -61,19 +48,7 @@
 			}}
 			aria-label="Delete dashboard"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M3 6h18" />
-				<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-				<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-			</svg>
+			<Trash size="14" />
 		</button>
 	</div>
 
@@ -85,70 +60,30 @@
 		{/if}
 	</div>
 
-	<!-- Card Footer / Actions -->
 	<div class="card-footer">
 		<div class="footer-actions">
-			<!-- View Local Profile Action -->
 			<a href={resolve('/view') + `?local_id=${dashboard.id}`} class="btn-view-local">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="14"
-					height="14"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-					<circle cx="12" cy="12" r="3" />
-				</svg>
+				<Eye size="14" />
 				View Local
 			</a>
 
-			<!-- Cloud Sharing Actions -->
 			<div class="cloud-actions">
 				{#if dashboard.firebaseId}
-					<!-- If uploaded, allow direct viewing or link copy -->
 					<a
 						href={resolve('/share') + `?id=${dashboard.firebaseId}`}
 						class="btn-cloud-view"
 						aria-label="View from cloud"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-						>
-							<path
-								d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.47-.47-1.12-1-2.5-1-2.28 0-4 1.72-4 4 0 .3 0 .7.05 1a5.85 5.85 0 0 0-4.55 5.5c0 3 2.5 5 5.5 5h10"
-							/>
-						</svg>
+						<Cloud size="14" />
 					</a>
 					<CopyButton
 						beforeCopyText={'Share link'}
 						text={page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`}
 					></CopyButton>
 				{:else}
-					<!-- If not uploaded yet, show Upload Button -->
 					{#snippet idleView()}
 						<span class="upload-btn-content">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="14"
-								height="14"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-								<polyline points="17 8 12 3 7 8" />
-								<line x1="12" y1="3" x2="12" y2="15" />
-							</svg>
+							<CloudUpload size="14" />
 							Upload to Cloud
 						</span>
 					{/snippet}

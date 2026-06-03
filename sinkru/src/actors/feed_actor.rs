@@ -24,7 +24,10 @@ impl Feeder {
     }
 
     fn handle_text_message(&mut self, msg: String) {
-        self.manager.do_send(FeederMessage { msg });
+        self.manager.do_send(FeederMessage::Observation {
+            msg: serde_json::from_str(&msg.clone()).unwrap(),
+            feeder_id: self.name.clone(),
+        });
     }
 
     fn start_heartbeat(&self, ctx: &mut WebsocketContext<Self>) {
@@ -32,6 +35,8 @@ impl Feeder {
             if Instant::now().duration_since(actor.hb) > CLIENT_TIMEOUT {
                 log::warn!("Feeder '{}' heartbeat failed, shutting down", actor.name);
                 ctx.stop();
+            } else {
+                ctx.ping(b"");
             }
         });
     }
@@ -43,10 +48,16 @@ impl Actor for Feeder {
     fn started(&mut self, ctx: &mut Self::Context) {
         log::info!("Feeder '{}' connected", self.name);
         self.start_heartbeat(ctx);
+        self.manager.do_send(FeederMessage::NewFeeder {
+            name: self.name.clone(),
+        })
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         log::info!("Feeder '{}' disconnected", self.name);
+        self.manager.do_send(FeederMessage::RageQuitFeeder {
+            name: self.name.clone(),
+        })
     }
 }
 
@@ -60,17 +71,14 @@ impl StreamHandler<Result<Message, ProtocolError>> for Feeder {
             Ok(msg) => msg,
         };
 
+        self.hb = Instant::now();
+
         match msg {
             Message::Text(json_str) => self.handle_text_message(json_str.to_string()),
             Message::Binary(_) => (),
             Message::Continuation(_) => ctx.stop(),
-            Message::Ping(bytes) => {
-                self.hb = Instant::now();
-                ctx.pong(&bytes);
-            }
-            Message::Pong(_) => {
-                self.hb = Instant::now();
-            }
+            Message::Ping(bytes) => ctx.pong(&bytes),
+            Message::Pong(_) => (),
             Message::Close(close_reason) => {
                 ctx.close(close_reason);
                 ctx.stop();
@@ -79,4 +87,3 @@ impl StreamHandler<Result<Message, ProtocolError>> for Feeder {
         }
     }
 }
-

@@ -1,34 +1,43 @@
 <script lang="ts">
 	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { computeChildren, processData } from '../utils.ts';
 	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
 	import Table from './Table.svelte';
 
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
-	let obsolete = $state(false);
+	let obsolete = $derived(false);
 	let metrics: SingleMetric[] = $state([]);
 	let unsub: (() => void) | undefined;
+	let setIntervalId: NodeJS.Timeout;
 
-	unsub = streamState.subscribe((data) => {
-		metrics.push(...data);
-		obsolete = true;
+	onMount(() => {
+		streamState.onreset(() => {
+			metrics = [];
+			enhancedMetrics = computeChildren(processData(metrics));
+		});
+		unsub = streamState.subscribe((fullData) => {
+			metrics = fullData;
+			console.log('full data is', fullData);
+			obsolete = true;
+		});
+		enhancedMetrics = computeChildren(processData(metrics));
+		setIntervalId = setInterval(() => {
+			if (obsolete == true) {
+				console.log('UPDATING.', metrics.length);
+				let start = performance.now();
+				enhancedMetrics = computeChildren(processData(metrics));
+				let end = performance.now();
+				console.log('TOOK: ', end - start);
+				obsolete = false;
+			}
+		}, 1000);
 	});
 
 	onDestroy(() => {
 		unsub?.();
+		clearInterval(setIntervalId);
 	});
-
-	setInterval(() => {
-		if (obsolete == true) {
-			console.log('UPDATING.', metrics.length);
-			let start = performance.now();
-			enhancedMetrics = computeChildren(processData(metrics));
-			let end = performance.now();
-			console.log('TOOK: ', end - start);
-			obsolete = false;
-		}
-	}, 1000);
 
 	let globalMax: number = $derived.by(() => {
 		return enhancedMetrics.length > 0 ? Math.max(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
@@ -39,11 +48,11 @@
 </script>
 
 <main class="main-container">
-	<section class="table-section panel-card">
+	<section class="table-section">
 		<div class="table-header-row">
 			{#if metrics.length > 0}
 				<span class="data-summary">
-					Showing {metrics.length} raw records grouped by function node
+					{metrics.length} data points
 				</span>
 			{/if}
 		</div>
@@ -52,8 +61,8 @@
 			<Table data={enhancedMetrics} max={globalMax} min={globalMin} />
 		{:else}
 			<div class="empty-state">
-				<h3>No profiling data available</h3>
-				<p>Connect to an active SSE endpoint to begin streaming program telemetry.</p>
+				<h3>Do you even stream bro?</h3>
+				<p>Connect to your deployed sink server to begin streaming telemetry. bro.</p>
 			</div>
 		{/if}
 	</section>

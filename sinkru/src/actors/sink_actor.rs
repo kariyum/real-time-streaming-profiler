@@ -44,7 +44,8 @@ impl Actor for SinkActor {
 impl Handler<FeederMessage> for SinkActor {
     type Result = ();
     fn handle(&mut self, msg: FeederMessage, ctx: &mut Self::Context) -> Self::Result {
-        let data = actix_sse::Data::new(msg.msg);
+        let byte_string = serde_json::to_string(&msg).unwrap();
+        let data = actix_sse::Data::new(byte_string);
         match self.tx.send(Event::Data(data)) {
             Ok(_) => (),
             Err(_) => ctx.stop(),

@@ -45,7 +45,7 @@
 					>
 						<polygon points="5 3 19 12 5 21 5 3" />
 					</svg>
-					Live Stream
+					Feeder Stream
 				</a>
 				<a
 					href={resolve('/view')}
@@ -66,7 +66,7 @@
 						<path d="M15 3v18" />
 						<path d="m8 9 3 3-3 3" />
 					</svg>
-					Dashboards
+					Feeders History
 				</a>
 			</nav>
 
@@ -108,7 +108,7 @@
 		padding: 0 1.5rem;
 		height: 4.5rem;
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
 		gap: 1rem;
 	}

@@ -1,5 +1,5 @@
 import type { SingleMetric } from './types.ts';
-import { MetricsArraySchema } from './types.ts';
+import { FeederMessageSchema } from './types.ts';
 
 type ConnectionState = 'closed' | 'open' | 'error' | 'connecting';
 
@@ -10,6 +10,9 @@ class EventStreamState {
 	#eventSource: EventSource | undefined = $state();
 	connected: ConnectionState = $state('closed');
 	#subs: Subscriber[] = [];
+	#onresetSubs: (() => void)[] = [];
+	metrics: SingleMetric[] = $state([]);
+	onlineFeeders: string[] = $state([]);
 
 	connect = () => {
 		if (this.#eventSource) {
@@ -47,13 +50,24 @@ class EventStreamState {
 			this.connected = 'open';
 		};
 		this.#eventSource.onmessage = (event: MessageEvent) => {
-			if (event.data) {
-				const result = MetricsArraySchema.safeParse(JSON.parse(event.data));
-				if (result.success) {
-					this.#subs.forEach(f => f(result.data));
-				} else {
-					console.error('Invalid SSE data:', result.error.flatten());
+			if (!event.data) return;
+			const result = FeederMessageSchema.safeParse(JSON.parse(event.data));
+			if (!result.success) {
+				console.error('Invalid SSE message:', result.error.flatten());
+				return;
+			}
+			const msg = result.data;
+			if (msg.type === 'observation') {
+				this.metrics.push(...msg.msg);
+				this.#subs.forEach((f) => f(this.metrics));
+			} else if (msg.type === 'new_feeder') {
+				if (!this.onlineFeeders.includes(msg.name)) {
+					this.onlineFeeders = [...this.onlineFeeders, msg.name];
 				}
+			} else if (msg.type === 'rage_quit_feeder') {
+				this.onlineFeeders = this.onlineFeeders.filter((n) => n !== msg.name);
+			} else if (msg.type === 'online_feeders') {
+				this.onlineFeeders = msg.feeder_ids;
 			}
 		};
 	};
@@ -61,6 +75,7 @@ class EventStreamState {
 	disconnect = () => {
 		if (this.#eventSource) {
 			this.#eventSource.close();
+			this.onlineFeeders = [];
 			this.#eventSource = undefined;
 		}
 		this.connected = 'closed';
@@ -68,14 +83,25 @@ class EventStreamState {
 
 	subscribe = (f: Subscriber): (() => void) => {
 		this.#subs.push(f);
+		f(this.metrics);
 		return () => {
-			this.#subs = this.#subs.filter(sub => sub !== f);
+			this.#subs = this.#subs.filter((sub) => sub !== f);
 		};
 	};
 
 	destroy = () => {
 		this.disconnect();
 		this.#subs = [];
+		this.onlineFeeders = [];
+	};
+
+	reset = () => {
+		this.metrics = [];
+		this.#onresetSubs.forEach((f) => f());
+	};
+
+	onreset = (f: () => void) => {
+		this.#onresetSubs.push(f);
 	};
 }
 

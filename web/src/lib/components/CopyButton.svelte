@@ -4,7 +4,7 @@
 	let {
 		text,
 		beforeCopyText,
-		afterCopyText = 'Copied To Clipboard!'
+		afterCopyText = 'Copied!'
 	}: { text: string; beforeCopyText: string; afterCopyText?: string } = $props();
 
 	let buttonText = $derived(beforeCopyText);
