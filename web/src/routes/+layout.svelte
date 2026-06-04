@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import ControlPanel from '$lib/components/ControlPanel.svelte';
+	import { eventStreamState } from '$lib/eventSource.svelte';
 
 	let { children } = $props();
 
@@ -75,6 +76,16 @@
 			</div>
 		</div>
 	</header>
+
+	{#if eventStreamState.onlineFeeders.length > 0}
+		<div class="feeders-list">
+			{#each eventStreamState.onlineFeeders as feeder}
+				<span class="feeder-tag">{feeder}</span>
+			{/each}
+		</div>
+	{:else if eventStreamState.connected === 'open'}
+		<div>0 online feeders ≡(▔﹏▔)≡</div>
+	{/if}
 
 	<main class="container main-content">
 		{@render children()}
@@ -205,5 +216,23 @@
 		.header-actions {
 			display: none;
 		}
+	}
+
+	.feeders-list {
+		display: flex;
+		gap: 0.35rem;
+		margin: 0.5rem 1.5rem;
+	}
+
+	.feeder-tag {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		border-radius: var(--radius-sm);
+		background-color: var(--primary-soft);
+		color: var(--primary);
+		border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
 	}
 </style>

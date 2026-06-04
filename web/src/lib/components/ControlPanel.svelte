@@ -56,14 +56,6 @@
 	>
 		<RotateCcw size="16" />
 	</button>
-
-	{#if streamState.onlineFeeders.length > 0}
-		<div class="feeders-list">
-			{#each streamState.onlineFeeders as feeder}
-				<span class="feeder-tag">{feeder}</span>
-			{/each}
-		</div>
-	{/if}
 </section>
 
 <style>
@@ -156,26 +148,5 @@
 		to {
 			box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
 		}
-	}
-
-	.feeders-list {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		margin-left: 0.5rem;
-		padding-left: 0.5rem;
-		border-left: 1px solid var(--panel-border);
-	}
-
-	.feeder-tag {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.2rem 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		border-radius: var(--radius-sm);
-		background-color: var(--primary-soft);
-		color: var(--primary);
-		border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
 	}
 </style>

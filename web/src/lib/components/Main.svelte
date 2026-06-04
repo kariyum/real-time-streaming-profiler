@@ -2,7 +2,7 @@
 	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { computeChildren, processData } from '../utils.ts';
-	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
+	import { eventStreamState, eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
 	import Table from './Table.svelte';
 
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
@@ -59,6 +59,11 @@
 
 		{#if enhancedMetrics.length > 0}
 			<Table data={enhancedMetrics} max={globalMax} min={globalMin} />
+		{:else if eventStreamState.connected === 'open'}
+			<div class="empty-state">
+				<h3>Feeders are not feeding...</h3>
+				<p>9x report?</p>
+			</div>
 		{:else}
 			<div class="empty-state">
 				<h3>Do you even stream bro?</h3>
