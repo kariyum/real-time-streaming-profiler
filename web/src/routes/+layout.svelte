@@ -6,6 +6,7 @@
 	import { page } from '$app/state';
 	import ControlPanel from '$lib/components/ControlPanel.svelte';
 	import { eventStreamState } from '$lib/eventSource.svelte';
+	import { History, Play } from '@lucide/svelte';
 
 	let { children } = $props();
 
@@ -34,18 +35,7 @@
 					class="nav-link"
 					class:active={currentPath === resolve('/') || currentPath === '/'}
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						class="nav-icon"
-					>
-						<polygon points="5 3 19 12 5 21 5 3" />
-					</svg>
+					<Play size="14" />
 					Feeder Stream
 				</a>
 				<a
@@ -53,20 +43,7 @@
 					class="nav-link"
 					class:active={currentPath.includes('/view') || currentPath.includes('/share')}
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						class="nav-icon"
-					>
-						<rect width="18" height="18" x="3" y="3" rx="2" />
-						<path d="M15 3v18" />
-						<path d="m8 9 3 3-3 3" />
-					</svg>
+					<History size="14" />
 					Feeders History
 				</a>
 			</nav>
@@ -77,15 +54,15 @@
 		</div>
 	</header>
 
-	{#if eventStreamState.onlineFeeders.length > 0}
-		<div class="feeders-list">
+	<div class="feeders-list">
+		{#if eventStreamState.onlineFeeders.length > 0}
 			{#each eventStreamState.onlineFeeders as feeder}
 				<span class="feeder-tag">{feeder}</span>
 			{/each}
-		</div>
-	{:else if eventStreamState.connected === 'open'}
-		<div>0 online feeders ≡(▔﹏▔)≡</div>
-	{/if}
+		{:else if eventStreamState.connected === 'open'}
+			0 online feeders ≡(▔﹏▔)≡
+		{/if}
+	</div>
 
 	<main class="container main-content">
 		{@render children()}

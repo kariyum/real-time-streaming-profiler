@@ -45,6 +45,7 @@ class EventStreamState {
 
 		this.#eventSource.onerror = () => {
 			this.connected = 'error';
+			this.onlineFeeders = [];
 		};
 		this.#eventSource.onopen = () => {
 			this.connected = 'open';

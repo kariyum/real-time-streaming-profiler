@@ -34,7 +34,6 @@
 	}
 </script>
 
-<!-- Custom Styled Dialog Modal -->
 <dialog bind:this={dialog} class="dashboard-dialog animate-modal">
 	<div class="dialog-header">
 		<h3 class="dialog-title">Save Profile Snapshot</h3>
@@ -166,7 +165,7 @@
 				<th class="col-num">Average (ms)</th>
 				<th class="col-num">Min (ms)</th>
 				<th class="col-num">Max (ms)</th>
-				<th class="col-cpu">CPU time / Ratio</th>
+				<th class="col-cpu">CPU time (ms) </th>
 			</tr>
 		</thead>
 		<tbody>
@@ -238,7 +237,6 @@
 		white-space: nowrap;
 	}
 
-	/* Alignments */
 	.col-func {
 		width: 40%;
 	}
@@ -258,7 +256,7 @@
 		background-color: var(--dialog-bg);
 		color: var(--font-color);
 		box-shadow: var(--panel-shadow);
-		padding: 2rem;
+		padding: 1.5rem;
 		max-width: 500px;
 		width: 90%;
 		box-sizing: border-box;
@@ -305,9 +303,8 @@
 		}
 	}
 
-	/* CSS Modal Fade-In animation */
 	.animate-modal[open] {
-		animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+		animation: scaleUp 0.25s;
 	}
 
 	@keyframes scaleUp {

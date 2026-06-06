@@ -10,7 +10,7 @@
 			type="text"
 			name="title"
 			id="snapshot-title"
-			placeholder="e.g. Login flow — v1.4.2 profiling"
+			placeholder="e.g. Service profiling v1.4"
 			bind:value={title}
 		/>
 	</div>
@@ -19,7 +19,7 @@
 		<textarea
 			name="description"
 			id="snapshot-description"
-			placeholder="Add notes about this snapshot — branch, environment, observations..."
+			placeholder="Add notes about this profiling - branch, environment, observations..."
 			bind:value={description}
 		></textarea>
 	</div>

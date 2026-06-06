@@ -29,10 +29,7 @@
 	<div class="card-header">
 		<div class="header-left">
 			<h2 class="card-title" title={dashboard.entity.title}>{dashboard.entity.title}</h2>
-			<div class="card-date">
-				<Clock size="14" />
-				{formatDate(new Date(dashboard.entity.date.toString()))}
-			</div>
+			<div class="card-date">{formatDate(new Date(dashboard.entity.date.toString()))}</div>
 		</div>
 		<button
 			class="btn-delete-card"
@@ -69,17 +66,19 @@
 
 			<div class="cloud-actions">
 				{#if dashboard.firebaseId}
-					<a
-						href={resolve('/share') + `?id=${dashboard.firebaseId}`}
-						class="btn-cloud-view"
-						aria-label="View from cloud"
-					>
-						<Cloud size="14" />
-					</a>
-					<CopyButton
-						beforeCopyText={'Share link'}
-						text={page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`}
-					></CopyButton>
+					<div class="actions">
+						<a
+							href={resolve('/share') + `?id=${dashboard.firebaseId}`}
+							class="btn-cloud-view"
+							aria-label="View from cloud"
+						>
+							<Cloud size="14" />
+						</a>
+						<CopyButton
+							beforeCopyText={'Share link'}
+							text={page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`}
+						></CopyButton>
+					</div>
 				{:else}
 					{#snippet idleView()}
 						<span class="upload-btn-content">
@@ -99,6 +98,10 @@
 </div>
 
 <style>
+	.actions {
+		display: flex;
+		gap: 0.5rem;
+	}
 	.dashboard-card {
 		background-color: var(--panel-bg);
 		border: 1px solid var(--panel-border);
@@ -114,7 +117,6 @@
 			box-shadow var(--transition-fast);
 
 		&:hover {
-			transform: translateY(-2px);
 			border-color: rgba(var(--primary-rgb), 0.3);
 			box-shadow:
 				0 10px 15px -3px rgba(0, 0, 0, 0.05),
