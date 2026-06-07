@@ -51,7 +51,7 @@ jobs:
 
             - name: build
               env:
-                  BASE_PATH: "/${{ github.event.repository.name }}"
+                  BASE_PATH: "/test${{ github.event.repository.name }}"
                   VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
                   VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
                   VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
