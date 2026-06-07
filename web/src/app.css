@@ -130,6 +130,23 @@ pre {
 	padding: 0rem 1.5rem;
 }
 
+.tooltip {
+	position: fixed;
+	z-index: 100;
+	display: none;
+	pointer-events: none;
+	padding: 0.4rem 0.65rem;
+	margin: 0.5rem;
+	background-color: var(--panel-bg);
+	color: var(--font-color);
+	font-size: 0.75rem;
+	font-family: 'JetBrains Mono', monospace;
+	border: 1px solid var(--panel-border);
+	border-radius: var(--radius-sm);
+	box-shadow: var(--panel-shadow);
+	white-space: nowrap;
+}
+
 button {
 	display: inline-flex;
 	align-items: center;

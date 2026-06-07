@@ -2,6 +2,7 @@ use actix::prelude::*;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use std::time::Duration;
 use tokio::time::Instant;
+use uuid::Uuid;
 
 use crate::messages::FeederMessage;
 
@@ -10,6 +11,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub struct Feeder {
     name: String,
+    id: String,
     hb: Instant,
     manager: Recipient<FeederMessage>,
 }
@@ -18,6 +20,7 @@ impl Feeder {
     pub fn new(name: String, rec: Recipient<FeederMessage>) -> Self {
         Self {
             name,
+            id: Uuid::new_v4().to_string(),
             hb: Instant::now(),
             manager: rec,
         }
@@ -50,6 +53,7 @@ impl Actor for Feeder {
         self.start_heartbeat(ctx);
         self.manager.do_send(FeederMessage::NewFeeder {
             name: self.name.clone(),
+            id: self.id.clone(),
         })
     }
 
@@ -57,6 +61,7 @@ impl Actor for Feeder {
         log::info!("Feeder '{}' disconnected", self.name);
         self.manager.do_send(FeederMessage::RageQuitFeeder {
             name: self.name.clone(),
+            id: self.id.clone(),
         })
     }
 }

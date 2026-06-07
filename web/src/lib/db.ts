@@ -13,7 +13,7 @@ export class Database {
 	db: IDBDatabase | undefined;
 
 	private constructor(resolve: (db: Database) => void) {
-		const DBOpenRequest: IDBOpenDBRequest = indexedDB.open('metrics', 2);
+		const DBOpenRequest: IDBOpenDBRequest = indexedDB.open('metrics', 3);
 		DBOpenRequest.onerror = (event) => {
 			console.error('DBOpenRequest.onerror', event);
 		};
@@ -66,6 +66,10 @@ export class Database {
 					break;
 				case 2:
 					this.wrapEntitiesInUpgrade(transaction.objectStore('dashboards'));
+					break;
+				case 3:
+					this.migrateEnhancedMetrics(transaction.objectStore('dashboards'));
+					break;
 				default:
 					break;
 			}
@@ -95,10 +99,65 @@ export class Database {
 		};
 	}
 
+	private migrateEnhancedMetrics(store: IDBObjectStore) {
+		const cursorRequest = store.openCursor();
+		cursorRequest.onsuccess = () => {
+			const cursor = cursorRequest.result;
+			if (cursor) {
+				const value = cursor.value;
+				const entity = value.entity ?? value;
+				if (entity.metrics) {
+					this.migrateMetricTree(entity.metrics);
+				}
+				if (value.entity) {
+					cursor.update(value);
+				} else {
+					cursor.update({
+						entity: {
+							metrics: entity.metrics,
+							description: entity.description,
+							title: entity.title,
+							date: entity.date
+						},
+						firebaseId: value.firebaseId,
+						id: value.id
+					});
+				}
+				cursor.continue();
+			}
+		};
+	}
+
+	private migrateMetricTree(nodes: any[]): void {
+		for (const node of nodes) {
+			if ('parent' in node && !('caller' in node)) {
+				node.caller = node.parent;
+				delete node.parent;
+			}
+			if ('cpu_time' in node && !('cpuTime' in node)) {
+				node.cpuTime = node.cpu_time;
+				delete node.cpu_time;
+			}
+			if (!('fnId' in node)) {
+				node.fnId = node.id;
+			}
+			if (!('feederId' in node)) {
+				node.feederId = 'legacy';
+			}
+			if (node.children && Array.isArray(node.children)) {
+				this.migrateMetricTree(node.children);
+			}
+			const childSum = node.children
+				? node.children.reduce((sum: number, c: any) => sum + c.cpuTime, 0)
+				: 0;
+			node.selfTime = node.cpuTime - childSum;
+			node.selfTimePct = childSum == 0 ? 0 : ((node.cpuTime - childSum) / childSum) * 100;
+		}
+	}
+
 	private initSchema(db: IDBDatabase) {
 		db.createObjectStore('dashboards', { keyPath: 'id', autoIncrement: true });
 	}
-
 }
 
 export const dashboardsRepo = {

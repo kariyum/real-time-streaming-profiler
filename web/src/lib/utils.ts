@@ -1,4 +1,4 @@
-import type { EnhancedMetric, Metric, SingleMetric } from './types';
+import type { EnhancedMetric, Metric, SingleMetric, SingleMetricWithSource } from './types';
 
 function computeAverage(times_arr: number[]): number {
 	return times_arr.reduce((a, b) => a + b) / times_arr.length;
@@ -52,24 +52,30 @@ function copyEnhancedMetric(enhancedMetric: EnhancedMetric): EnhancedMetric {
 }
 
 export function computeChildren(array: EnhancedMetric[]): EnhancedMetric[] {
-	const difference = (a: Set<string | null>, b: Set<string | null>) =>
-		new Set([...a].filter((x) => !b.has(x)));
 	let arr = array.slice().map(copyEnhancedMetric);
 	let tree = [];
 	let lookup: Map<string, EnhancedMetric> = new Map();
 
-	const parents = new Set(arr.map((a) => a.parent).filter((a) => a !== null));
-	const functionNameClasses = new Set(arr.map((a) => a.id));
-	for (const it of difference(parents, functionNameClasses)) {
+	const fnsWithData = new Set(arr.map((a) => a.id));
+	const fnsExecuting = new Set(
+		arr
+			.filter((a) => a.caller !== null)
+			.filter((a) => !fnsWithData.has(`${a.feederId}-${a.caller}`))
+	);
+	for (const fn of fnsExecuting) {
 		arr.push({
-			id: it!,
-			parent: null,
+			id: `${fn.feederId}-${fn.caller}`,
+			fnId: fn.caller!,
+			caller: null,
 			average: 0,
 			min: 0,
 			max: 0,
 			nbCalls: 0,
-			cpu_time: 0,
-			children: []
+			cpuTime: 0,
+			selfTime: 0,
+			selfTimePct: 0,
+			children: [],
+			feederId: fn.feederId
 		});
 	}
 
@@ -79,12 +85,22 @@ export function computeChildren(array: EnhancedMetric[]): EnhancedMetric[] {
 	}
 
 	for (let i = 0; i < arr.length; i++) {
-		if (arr[i].parent) {
-			lookup.get(arr[i].parent!)!.children.push(arr[i]);
+		if (arr[i].caller) {
+			lookup.get(`${arr[i].feederId}-${arr[i].caller!}`)!.children.push(arr[i]);
 		} else {
 			tree.push(arr[i]);
 		}
 	}
+
+	function computeSelfTimes(nodes: EnhancedMetric[]): void {
+		for (const node of nodes) {
+			computeSelfTimes(node.children);
+			const childSum = node.children.reduce((sum, c) => sum + c.cpuTime, 0);
+			node.selfTime = node.cpuTime - childSum;
+			node.selfTimePct = childSum == 0 ? 0 : ((node.cpuTime - childSum) / childSum) * 100;
+		}
+	}
+	computeSelfTimes(tree);
 	return tree;
 }
 
@@ -92,13 +108,17 @@ function enhanceData(metrics: Metric[]): EnhancedMetric[] {
 	const enhancedData = metrics.map((metric) => {
 		const durationArray = metric.start_end_times.map(([a, b]) => b - a);
 		const newMetric = {
-			id: metric.id,
-			parent: metric.parent,
+			id: `${metric.feeder_id}-${metric.id}`,
+			fnId: metric.id,
+			caller: metric.parent,
 			average: computeAverage(durationArray),
 			min: computeMin(durationArray),
 			max: computeMax(durationArray),
-			cpu_time: computeCpuTime(metric.start_end_times),
+			cpuTime: computeCpuTime(metric.start_end_times),
+			selfTime: 0,
+			selfTimePct: 0,
 			nbCalls: computeNbCalls(durationArray),
+			feederId: metric.feeder_id,
 			children: []
 		};
 		return newMetric;
@@ -106,29 +126,33 @@ function enhanceData(metrics: Metric[]): EnhancedMetric[] {
 	return enhancedData;
 }
 
-function groupSingleMetricsIntoMetric(metrics: SingleMetric[]): Metric[] {
+function groupSingleMetricsIntoMetric(metrics: SingleMetricWithSource[]): Metric[] {
 	const map: Map<String, Metric> = new Map();
-	metrics.forEach((metric) => {
-		const key = `${metric.id}-${metric.parent}`;
+	for (const metric of metrics) {
+		const key = `${metric.feeder_id}-${metric.id}-${metric.parent}`;
 		if (map.has(key)) {
-			// console.log("LOGGING METRIC IN GROUPSINGLE", map[key]);
 			map.get(key)!.start_end_times.push(metric.start_end_times);
 		} else {
 			map.set(key, { ...metric, start_end_times: [metric.start_end_times] } as Metric);
 		}
-	});
+	}
 
 	return Array.from(map.values());
 }
 
-function nanosSecondsToMillis(data: SingleMetric[]) {
+function nanosSecondsToMillis(data: SingleMetricWithSource[]): SingleMetricWithSource[] {
 	return data.map((singleMetric) => {
-		const times = singleMetric.start_end_times.map((n) => n / 1_000_000);
-		return { ...singleMetric, start_end_times: times };
+		return {
+			...singleMetric,
+			start_end_times: [
+				singleMetric.start_end_times[0] / 1_000_000,
+				singleMetric.start_end_times[1] / 1_000_000
+			]
+		};
 	});
 }
 
-export function processData(data: SingleMetric[]) {
+export function processData(data: SingleMetricWithSource[]) {
 	const millisData = nanosSecondsToMillis(data);
 	const metrics = groupSingleMetricsIntoMetric(millisData);
 	const enhancedData = enhanceData(metrics);

@@ -1,9 +1,9 @@
-import type { SingleMetric } from './types.ts';
+import type { SingleMetric, SingleMetricWithSource } from './types.ts';
 import { FeederMessageSchema } from './types.ts';
 
 type ConnectionState = 'closed' | 'open' | 'error' | 'connecting';
 
-type Subscriber = (data: SingleMetric[]) => void;
+type Subscriber = (data: SingleMetricWithSource[]) => void;
 
 class EventStreamState {
 	ip = $state('localhost:8080');
@@ -11,8 +11,8 @@ class EventStreamState {
 	connected: ConnectionState = $state('closed');
 	#subs: Subscriber[] = [];
 	#onresetSubs: (() => void)[] = [];
-	metrics: SingleMetric[] = $state([]);
-	onlineFeeders: string[] = $state([]);
+	metrics: SingleMetricWithSource[] = $state([]);
+	onlineFeeders: { id: string; name: string }[] = $state([]);
 
 	connect = () => {
 		if (this.#eventSource) {
@@ -57,18 +57,21 @@ class EventStreamState {
 				console.error('Invalid SSE message:', result.error.flatten());
 				return;
 			}
-			const msg = result.data;
-			if (msg.type === 'observation') {
-				this.metrics.push(...msg.msg);
+			const data = result.data;
+			if (data.type === 'observation') {
+				const dataWithSource = data.msg.map((e) => {
+					return { ...e, feeder_id: data.feeder_id };
+				});
+				this.metrics.push(...dataWithSource);
 				this.#subs.forEach((f) => f(this.metrics));
-			} else if (msg.type === 'new_feeder') {
-				if (!this.onlineFeeders.includes(msg.name)) {
-					this.onlineFeeders = [...this.onlineFeeders, msg.name];
+			} else if (data.type === 'new_feeder') {
+				if (!this.onlineFeeders.map((e) => e.id).includes(data.id)) {
+					this.onlineFeeders = [...this.onlineFeeders, { name: data.name, id: data.id }];
 				}
-			} else if (msg.type === 'rage_quit_feeder') {
-				this.onlineFeeders = this.onlineFeeders.filter((n) => n !== msg.name);
-			} else if (msg.type === 'online_feeders') {
-				this.onlineFeeders = msg.feeder_ids;
+			} else if (data.type === 'rage_quit_feeder') {
+				this.onlineFeeders = this.onlineFeeders.filter((n) => n.id !== data.id);
+			} else if (data.type === 'online_feeders') {
+				this.onlineFeeders = data.feeder_ids;
 			}
 		};
 	};

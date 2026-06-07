@@ -1,13 +1,14 @@
 <script lang="ts">
-	import type { EnhancedMetric, SingleMetric } from '$lib/types.ts';
+	import type { EnhancedMetric, SingleMetric, SingleMetricWithSource } from '$lib/types.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { computeChildren, processData } from '../utils.ts';
 	import { eventStreamState, eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
 	import Table from './Table.svelte';
+	import { tooltip } from '$lib/attachments/Tooltip.ts';
 
 	let enhancedMetrics: Array<EnhancedMetric> = $state([]);
 	let obsolete = $derived(false);
-	let metrics: SingleMetric[] = $state([]);
+	let metrics: SingleMetricWithSource[] = $state([]);
 	let unsub: (() => void) | undefined;
 	let setIntervalId: NodeJS.Timeout;
 
@@ -40,10 +41,10 @@
 	});
 
 	let globalMax: number = $derived.by(() => {
-		return enhancedMetrics.length > 0 ? Math.max(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
+		return enhancedMetrics.length > 0 ? Math.max(...enhancedMetrics.map((a) => a.cpuTime)) : 0;
 	});
 	let globalMin: number = $derived.by(() => {
-		return enhancedMetrics.length > 0 ? Math.min(...enhancedMetrics.map((a) => a.cpu_time)) : 0;
+		return enhancedMetrics.length > 0 ? Math.min(...enhancedMetrics.map((a) => a.cpuTime)) : 0;
 	});
 </script>
 

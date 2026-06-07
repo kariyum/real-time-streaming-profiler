@@ -1,7 +1,8 @@
-use std::ops::Index;
+use std::{collections::HashSet, ops::Index};
 
 use actix::prelude::*;
 use log::info;
+use serde::Serialize;
 
 use crate::messages::{FeederMessage, SinkCommand};
 
@@ -10,10 +11,16 @@ struct FeederRecipient {
     recipient: Recipient<FeederMessage>,
 }
 
+#[derive(Clone, Serialize, Hash, Eq, PartialEq)]
+pub struct FeederId {
+    id: String,
+    name: String,
+}
+
 #[derive(Default)]
 pub struct SinkManager {
     ws: Vec<FeederRecipient>,
-    online_feeders: Vec<String>,
+    online_feeders: HashSet<FeederId>,
 }
 
 impl Handler<FeederMessage> for SinkManager {
@@ -22,15 +29,17 @@ impl Handler<FeederMessage> for SinkManager {
         for ws in &self.ws {
             match &msg {
                 FeederMessage::Observation { .. } => (),
-                FeederMessage::NewFeeder { name } => self.online_feeders.push(name.clone()),
-                FeederMessage::RageQuitFeeder { name } => {
-                    self.online_feeders
-                        .iter()
-                        .position(|feeder| **feeder == *name)
-                        .iter()
-                        .for_each(|idx| {
-                            self.online_feeders.swap_remove(*idx);
-                        });
+                FeederMessage::NewFeeder { name, id } => {
+                    self.online_feeders.insert(FeederId {
+                        id: id.clone(),
+                        name: name.clone(),
+                    });
+                }
+                FeederMessage::RageQuitFeeder { name, id } => {
+                    self.online_feeders.remove(&FeederId {
+                        id: id.to_string(),
+                        name: name.to_string(),
+                    });
                 }
                 FeederMessage::OnlineFeeders { .. } => (),
             }
@@ -44,13 +53,14 @@ impl Handler<SinkCommand> for SinkManager {
     fn handle(&mut self, msg: SinkCommand, _ctx: &mut Self::Context) -> Self::Result {
         match msg {
             SinkCommand::NewSink { recipient } => {
+                info!("New sink!");
                 recipient.do_send(FeederMessage::OnlineFeeders {
-                    feeder_ids: self.online_feeders.clone(),
+                    feeder_ids: self.online_feeders.clone().into_iter().collect(),
                 });
                 self.ws.push(FeederRecipient { recipient });
             }
             SinkCommand::Disconnected { recipient } => {
-                info!("Cleared up stopped actor");
+                info!("Cleared up sink");
                 self.ws
                     .iter()
                     .position(|r| r.recipient == recipient)
@@ -58,7 +68,7 @@ impl Handler<SinkCommand> for SinkManager {
                     .for_each(|idx| {
                         self.ws.swap_remove(*idx);
                     });
-                info!("Remaining connections {}", self.ws.len());
+                info!("Remaining sinks {}", self.ws.len());
             }
         }
     }

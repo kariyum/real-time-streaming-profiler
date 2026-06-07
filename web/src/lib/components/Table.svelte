@@ -7,6 +7,7 @@
 	import DashboardForm from './DashboardForm.svelte';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
+	import { Maximize2, Minimize2, Save } from '@lucide/svelte';
 
 	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
 	let initShow: boolean = $state(false);
@@ -71,59 +72,20 @@
 			disabled={!title.trim()}
 			aria-label="Save"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-				<polyline points="17 21 17 13 7 13 7 21" />
-				<polyline points="7 3 7 8 15 8" />
-			</svg>
+			<Save size="14" />
 			Save Snapshot
 		</button>
 	</div>
 </dialog>
 
-<!-- Table Toolbar controls -->
 <div class="table-toolbar">
 	<div class="toolbar-left">
 		<button onclick={() => expand()} aria-label="expand all rows">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<polyline points="15 3 21 3 21 9" />
-				<polyline points="9 21 3 21 3 15" />
-				<line x1="21" y1="3" x2="14" y2="10" />
-				<line x1="3" y1="21" x2="10" y2="14" />
-			</svg>
+			<Maximize2 size="14" />
 			Expand All
 		</button>
 		<button onclick={() => collapse()} aria-label="collapse all rows">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<polyline points="4 14 10 14 10 20" />
-				<polyline points="20 10 14 10 14 4" />
-				<line x1="14" y1="10" x2="21" y2="3" />
-				<line x1="10" y1="14" x2="3" y2="21" />
-			</svg>
+			<Minimize2 size="14" />
 			Collapse All
 		</button>
 	</div>
@@ -137,25 +99,12 @@
 			disabled={!data || data.length === 0}
 			aria-label="Save current snapshot"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-				<polyline points="17 21 17 13 7 13 7 21" />
-				<polyline points="7 3 7 8 15 8" />
-			</svg>
+			<Save size="14" />
 			Save Snapshot
 		</button>
 	</div>
 </div>
 
-<!-- Table View wrapper -->
 <div class="table-wrapper">
 	<table>
 		<thead>
@@ -171,7 +120,7 @@
 		<tbody>
 			{#if data}
 				{#each data as item (item.id)}
-					{#if !item.parent}
+					{#if !item.caller}
 						<Row currentItem={item} data={item.children} depth={0} {max} {min} {initShow} />
 					{/if}
 				{/each}
@@ -230,7 +179,6 @@
 		padding: 0.85rem 1rem;
 		font-size: 0.725rem;
 		font-weight: 700;
-		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--font-secondary);
 		border-bottom: 1px solid var(--table-border);

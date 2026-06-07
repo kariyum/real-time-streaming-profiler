@@ -19,10 +19,10 @@
 	let metrics: Array<EnhancedMetric> = $state([]);
 
 	let globalMax: number = $derived.by(() => {
-		return Math.max(...metrics.map((a) => a.cpu_time));
+		return Math.max(...metrics.map((a) => a.cpuTime));
 	});
 	let globalMin: number = $derived.by(() => {
-		return Math.min(...metrics.map((a) => a.cpu_time));
+		return Math.min(...metrics.map((a) => a.cpuTime));
 	});
 </script>
 

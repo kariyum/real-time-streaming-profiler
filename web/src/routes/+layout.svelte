@@ -57,7 +57,7 @@
 	<div class="feeders-list">
 		{#if eventStreamState.onlineFeeders.length > 0}
 			{#each eventStreamState.onlineFeeders as feeder}
-				<span class="feeder-tag">{feeder}</span>
+				<span class="feeder-tag">{feeder.name}</span>
 			{/each}
 		{:else if eventStreamState.connected === 'open'}
 			0 online feeders ≡(▔﹏▔)≡

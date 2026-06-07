@@ -5,6 +5,8 @@
 	import Self from './Row.svelte';
 	import { browser } from '$app/environment';
 	import { RowToggleEvent } from '$lib/event';
+	import type { EnhancedMetric } from '$lib/types';
+	import { tooltip } from '$lib/attachments/Tooltip';
 
 	let {
 		currentItem,
@@ -13,7 +15,14 @@
 		min,
 		max,
 		initShow
-	}: { currentItem: any; data: any; depth: any; min: any; max: any; initShow: boolean } = $props();
+	}: {
+		currentItem: EnhancedMetric;
+		data: EnhancedMetric[];
+		depth: number;
+		min: number;
+		max: number;
+		initShow: boolean;
+	} = $props();
 
 	let showChildren = $derived(initShow);
 	function toggle() {
@@ -40,8 +49,12 @@
 		return Math.ceil(n);
 	}
 
-	let ratio = $derived(max > 0 ? currentItem.cpu_time / max : 0);
+	let ratio = $derived(max > 0 ? currentItem.cpuTime / max : 0);
 	let percent = $derived(Math.round(ratio * 100));
+
+	let selfTimeDisplay = $derived(
+		format(currentItem.selfTime) + 'ms (' + Math.round(currentItem.selfTimePct) + '%)'
+	);
 
 	let children = $derived(data);
 </script>
@@ -61,7 +74,12 @@
 						<RightArrow></RightArrow>
 					{/if}
 				</span>
-				<span class="func-id">{currentItem.id}</span>
+				<div class="func-label">
+					{#if depth === 0}
+						<span class="feeder-badge">{currentItem.feederId}</span>
+					{/if}
+					<span class="func-id">{currentItem.fnId}</span>
+				</div>
 			</div>
 		</td>
 		<td class="col-num font-mono">{currentItem.nbCalls}</td>
@@ -69,9 +87,9 @@
 		<td class="col-num font-mono">{format(currentItem.min)}</td>
 		<td class="col-num font-mono">{format(currentItem.max)}</td>
 		<td class="col-cpu">
-			<div class="cpu-progress-wrapper" style:--rowcolor={ratio}>
+			<div class="cpu-progress-wrapper" style:--rowcolor={ratio} {@attach tooltip(selfTimeDisplay)}>
 				<div class="cpu-numbers font-mono">
-					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
+					<span class="cpu-val">{format(currentItem.cpuTime)}</span>
 					<span class="cpu-pct">{percent}%</span>
 				</div>
 			</div>
@@ -81,11 +99,13 @@
 	<tr class="row-item" class:depth-row={depth > 0}>
 		<td class="col-func">
 			<div style:--ml={(depth * 24).toString() + 'px'} class="func-name-container">
-				{#if depth > 0}
-					<span class="indent-guide" style:--left-offset="-14px"></span>
-				{/if}
 				<span class="arrow-spacer"></span>
-				<span class="func-id">{currentItem.id}</span>
+				<div class="func-label">
+					{#if depth === 0}
+						<span class="feeder-badge">{currentItem.feederId}</span>
+					{/if}
+					<span class="func-id">{currentItem.fnId}</span>
+				</div>
 			</div>
 		</td>
 		<td class="col-num font-mono">{currentItem.nbCalls}</td>
@@ -95,13 +115,14 @@
 		<td class="col-cpu">
 			<div class="cpu-progress-wrapper" style:--rowcolor={ratio}>
 				<div class="cpu-numbers font-mono">
-					<span class="cpu-val">{format(currentItem.cpu_time)}</span>
+					<span class="cpu-val">{format(currentItem.cpuTime)}</span>
 					<span class="cpu-pct">{percent}%</span>
 				</div>
 			</div>
 		</td>
 	</tr>
 {/if}
+
 {#if showChildren && children.length > 0}
 	{#each children as item (item.id)}
 		<Self currentItem={item} data={item.children} depth={depth + 1} {min} {max} {initShow} />
@@ -187,6 +208,25 @@
 		width: 1.25rem;
 	}
 
+	.func-label {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.feeder-badge {
+		font-size: 0.55rem;
+		padding: 0.05rem 0.3rem;
+		border-radius: var(--radius-sm);
+		background-color: var(--primary-soft);
+		color: var(--primary);
+		font-family: 'JetBrains Mono', monospace;
+		margin-bottom: 0.15rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		line-height: 1.2;
+		width: fit-content;
+	}
+
 	.func-id {
 		font-family: 'JetBrains Mono', monospace;
 		font-weight: 500;
@@ -195,14 +235,13 @@
 		word-break: break-all;
 	}
 
-	/* CPU Progress Bar Visualizer */
 	.cpu-progress-wrapper {
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
 		max-width: 260px;
 		/* Add subtle color blend support in cells */
-		background-color: rgba(249, 115, 22, calc(var(--rowcolor) * 0.05));
+		background-color: rgba(249, 115, 22, calc(var(--rowcolor)));
 		border-radius: 4px;
 		padding: 0.25rem 0.5rem;
 	}
