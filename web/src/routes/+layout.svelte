@@ -7,6 +7,18 @@
 	import ControlPanel from '$lib/components/ControlPanel.svelte';
 	import { eventStreamState } from '$lib/eventSource.svelte';
 	import { History, Play } from '@lucide/svelte';
+	import { onNavigate } from '$app/navigation';
+
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	let { children } = $props();
 
@@ -56,11 +68,12 @@
 
 	<div class="feeders-list">
 		{#if eventStreamState.onlineFeeders.length > 0}
+			Online Feeders:
 			{#each eventStreamState.onlineFeeders as feeder}
 				<span class="feeder-tag">{feeder.name}</span>
 			{/each}
 		{:else if eventStreamState.connected === 'open'}
-			0 online feeders ≡(▔﹏▔)≡
+			NO FEEDER :/
 		{/if}
 	</div>
 
@@ -86,6 +99,7 @@
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
 		border-bottom: 1px solid var(--header-border);
+		view-transition-name: header;
 		transition:
 			background-color var(--transition-normal),
 			border-color var(--transition-normal);
@@ -199,6 +213,8 @@
 		display: flex;
 		gap: 0.35rem;
 		margin: 0.5rem 1.5rem;
+		font-family: 'JetBrains Mono', monospace;
+		view-transition-name: feeders-list;
 	}
 
 	.feeder-tag {
@@ -211,5 +227,40 @@
 		background-color: var(--primary-soft);
 		color: var(--primary);
 		border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+	}
+
+	@keyframes fade-out {
+		to {
+			opacity: 0;
+		}
+	}
+
+	@keyframes slide-from-right {
+		from {
+			transform: translateX(30px);
+		}
+	}
+
+	@keyframes slide-to-left {
+		to {
+			transform: translateX(-30px);
+		}
+	}
+	:root::view-transition-old(root) {
+		animation:
+			90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+			300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+	}
+
+	:root::view-transition-new(root) {
+		animation:
+			210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+			300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
 	}
 </style>
