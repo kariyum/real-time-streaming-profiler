@@ -20,7 +20,6 @@ export class Database {
 
 		DBOpenRequest.onsuccess = (event) => {
 			this.db = DBOpenRequest.result;
-			console.log('resolved');
 			resolve(this);
 		};
 
@@ -41,10 +40,13 @@ export class Database {
 		};
 	}
 
-	public static getInstance(): Promise<Database> {
-		return new Promise<Database>((resolve, reject) => {
+	public static async getInstance(): Promise<Database> {
+		return new Promise<Database>(async (resolve, reject) => {
 			if (!Database.instance) {
-				Database.instance = new Database(resolve);
+				new Database((db) => {
+					Database.instance = db;
+					resolve(Database.instance);
+				});
 			} else {
 				resolve(Database.instance);
 			}
