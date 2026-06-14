@@ -53,12 +53,16 @@ export const dashboardsRepoFirebase = {
 	readAll: async (): Promise<DashboardEntityFirestore[]> => {
 		const querySnapshot = await getDocs(collection(db, 'dashboards'));
 		return querySnapshot.docs.map((doc) => {
-			const res: DashboardEntityFirestore = {
-				entity: doc.data() as DashboardEntity,
+			const data = doc.data();
+			const entity = {
+				...data,
+				date: new Date(data.date)
+			} as DashboardEntity;
+			return {
+				entity,
 				firebaseId: doc.id,
 				id: undefined
 			};
-			return res;
 		});
 	},
 	delete: async (id: string): Promise<void> => {

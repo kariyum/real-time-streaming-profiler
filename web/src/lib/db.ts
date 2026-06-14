@@ -171,13 +171,17 @@ export const dashboardsRepo = {
 			objectStore.onsuccess = () => {
 				const result = objectStore.result as any[];
 				const normalized = result.map((item) => {
-					if (item.entity) return item as DashboardEntityFirestore;
+					if (item.entity)
+						return {
+							...item,
+							entity: { ...item.entity, date: new Date(item.entity.date) }
+						} as DashboardEntityFirestore;
 					return {
 						entity: {
 							metrics: item.metrics,
 							description: item.description,
 							title: item.title,
-							date: item.date
+							date: new Date(item.date)
 						},
 						firebaseId: item.firebaseId,
 						id: item.id

@@ -4,7 +4,9 @@
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
 	import AsyncButton from './AsyncButton.svelte';
 	import CopyButton from './CopyButton.svelte';
-	import { Clock, Cloud, CloudUpload, Eye, Trash } from '@lucide/svelte';
+	import BenchmarkSelector from './BenchmarkSelector.svelte';
+	import { ArrowLeftRight, Clock, Cloud, CloudUpload, Eye, Trash } from '@lucide/svelte';
+	import { openBenchmarkSelector } from '$lib/components/BenchmarkSelector.svelte';
 
 	let {
 		dashboard,
@@ -61,12 +63,19 @@
 		<div class="footer-actions">
 			<a href={resolve('/view') + `?local_id=${dashboard.id}`} class="btn-view-local">
 				<Eye size="14" />
-				View Local
+				View
 			</a>
 
 			<div class="cloud-actions">
 				{#if dashboard.firebaseId}
 					<div class="actions">
+						<!-- <button
+							class="btn-compare"
+							onclick={() => openBenchmarkSelector()}
+							aria-label="Compare with another benchmark"
+						>
+							<ArrowLeftRight size="14" />
+						</button> -->
 						<a
 							href={resolve('/share') + `?id=${dashboard.firebaseId}`}
 							class="btn-cloud-view"
@@ -75,7 +84,7 @@
 							<Cloud size="14" />
 						</a>
 						<CopyButton
-							beforeCopyText={'Share link'}
+							beforeCopyText={'Share'}
 							text={page.url.origin + resolve('/share') + `?id=${dashboard.firebaseId}`}
 						></CopyButton>
 					</div>
@@ -247,6 +256,24 @@
 		&:hover {
 			background-color: var(--primary);
 			color: #ffffff;
+		}
+	}
+
+	.btn-compare {
+		padding: 0;
+		display: flex;
+		color: var(--font-secondary);
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--btn-border);
+		background-color: transparent;
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+
+		&:hover {
+			background-color: var(--table-hover);
+			color: var(--font-color);
 		}
 	}
 

@@ -8,6 +8,8 @@
 	import { eventStreamState } from '$lib/eventSource.svelte';
 	import { History, Play } from '@lucide/svelte';
 	import { onNavigate } from '$app/navigation';
+	import BenchmarkSelector from '$lib/components/BenchmarkSelector.svelte';
+	import { closeOnClickOutisde } from '$lib/attachments/CloseOnClickOutside';
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return;
@@ -79,6 +81,8 @@
 
 	<main class="container main-content">
 		{@render children()}
+
+		<BenchmarkSelector />
 	</main>
 </div>
 

@@ -77,3 +77,42 @@ export type EnhancedMetric = {
 	selfTimePct: number;
 	children: EnhancedMetric[];
 };
+
+export type DiffStatus = 'same' | 'changed' | 'added' | 'removed';
+
+export type DeltaMetrics = {
+	cpuTime: number;
+	cpuTimePct: number;
+	average: number;
+	averagePct: number;
+	nbCalls: number;
+	nbCallsPct: number;
+	selfTime: number;
+	selfTimePct: number;
+};
+
+export type DiffMetric = {
+	baseline: EnhancedMetric | null;
+	comparison: EnhancedMetric | null;
+	delta: DeltaMetrics | null;
+	status: DiffStatus;
+	children: DiffMetric[];
+};
+
+export type DiffResult = {
+	rootNodes: DiffMetric[];
+	summary: {
+		totalFunctions: number;
+		improved: number;
+		regressed: number;
+		added: number;
+		removed: number;
+	};
+};
+
+export type BenchmarkSource = {
+	type: 'local' | 'cloud' | 'live';
+	id: string | null;
+	label: string;
+	metrics: EnhancedMetric[];
+};

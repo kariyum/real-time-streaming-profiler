@@ -78,7 +78,7 @@
 					{#if depth === 0}
 						<span class="feeder-badge">{currentItem.feederId}</span>
 					{/if}
-					<span class="func-id">{currentItem.fnId}</span>
+					<span class="func-id">{currentItem.fnId ?? currentItem.id}</span>
 				</div>
 			</div>
 		</td>
@@ -104,7 +104,7 @@
 					{#if depth === 0}
 						<span class="feeder-badge">{currentItem.feederId}</span>
 					{/if}
-					<span class="func-id">{currentItem.fnId}</span>
+					<span class="func-id">{currentItem.fnId ?? currentItem.id}</span>
 				</div>
 			</div>
 		</td>

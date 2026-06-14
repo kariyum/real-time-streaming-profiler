@@ -84,25 +84,6 @@
 		margin-top: 1rem;
 	}
 
-	.page-header {
-		margin-bottom: 0.5rem;
-	}
-
-	.page-title {
-		font-size: 1.875rem;
-		margin-bottom: 0.25rem;
-		background: linear-gradient(to right, var(--font-color), var(--font-secondary));
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
-
-	.page-subtitle {
-		font-size: 0.95rem;
-		color: var(--font-secondary);
-		margin: 0;
-	}
-
 	/* Dashboards Grid Layout */
 	.dashboards-grid {
 		display: grid;

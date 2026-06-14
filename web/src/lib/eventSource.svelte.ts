@@ -1,5 +1,6 @@
-import type { SingleMetric, SingleMetricWithSource } from './types.ts';
+import type { SingleMetric, SingleMetricWithSource, EnhancedMetric } from './types.ts';
 import { FeederMessageSchema } from './types.ts';
+import { computeChildren, processData } from './utils.ts';
 
 type ConnectionState = 'closed' | 'open' | 'error' | 'connecting';
 
@@ -106,6 +107,10 @@ class EventStreamState {
 
 	onreset = (f: () => void) => {
 		this.#onresetSubs.push(f);
+	};
+
+	getProcessedMetrics = (): EnhancedMetric[] => {
+		return computeChildren(processData(this.metrics));
 	};
 }
 

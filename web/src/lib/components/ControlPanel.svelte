@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { Play, RotateCcw, Square, Server } from '@lucide/svelte';
+	import { ArrowLeftRight, Play, RotateCcw, Square, Server } from '@lucide/svelte';
 	import { eventStreamState as streamState } from '$lib/eventSource.svelte.ts';
+	import { openBenchmarkSelector } from '$lib/components/BenchmarkSelector.svelte';
+
+	let showCompare = $state(false);
 </script>
 
 <section class="control-panel">
@@ -55,6 +58,10 @@
 		aria-label="Reset metrics"
 	>
 		<RotateCcw size="16" />
+	</button>
+	<button onclick={() => openBenchmarkSelector()} aria-label="Compare with snapshot">
+		<ArrowLeftRight size="16" />
+		Diff
 	</button>
 </section>
 

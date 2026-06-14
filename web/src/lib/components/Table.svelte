@@ -7,7 +7,8 @@
 	import DashboardForm from './DashboardForm.svelte';
 	import { dashboardsRepo, Database, type DashboardEntity } from '$lib/db';
 	import { dashboardsRepoFirebase, type DashboardEntityFirestore } from '$lib/firebase';
-	import { Maximize2, Minimize2, Save } from '@lucide/svelte';
+	import BenchmarkSelector from './BenchmarkSelector.svelte';
+	import { ArrowLeftRight, Maximize2, Minimize2, Save } from '@lucide/svelte';
 
 	let { data, max, min }: { data: EnhancedMetric[]; max: number; min: number } = $props();
 	let initShow: boolean = $state(false);
@@ -16,6 +17,7 @@
 	let description: string = $state('');
 	let dialog: HTMLDialogElement;
 	let database: Database;
+	let showCompare = $state(false);
 
 	onMount(async () => {
 		if (browser) {
@@ -88,6 +90,10 @@
 			<Minimize2 size="14" />
 			Collapse All
 		</button>
+		<button onclick={() => (showCompare = true)} aria-label="Compare benchmarks">
+			<ArrowLeftRight size="14" />
+			Compare
+		</button>
 	</div>
 
 	<div class="toolbar-right">
@@ -128,6 +134,8 @@
 		</tbody>
 	</table>
 </div>
+
+<!-- <BenchmarkSelector /> -->
 
 <style>
 	/* Toolbar styling */
