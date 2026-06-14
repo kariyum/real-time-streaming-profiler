@@ -7,11 +7,13 @@
 	let {
 		diffResult,
 		baselineLabel,
-		comparisonLabel
+		comparisonLabel,
+		onSwap
 	}: {
 		diffResult: DiffResult;
 		baselineLabel: string;
 		comparisonLabel: string;
+		onSwap?: () => void;
 	} = $props();
 
 	let filter: DiffStatus | 'all' = $state('all');
@@ -44,9 +46,7 @@
 	}
 
 	function swap() {
-		const tmp = baselineLabel;
-		baselineLabel = comparisonLabel;
-		comparisonLabel = tmp;
+		onSwap?.();
 	}
 </script>
 
@@ -84,20 +84,32 @@
 					<th class="col-func">Function</th>
 					<th class="col-num">
 						<div class="col-header">
-							<span class="col-label">{baselineLabel}</span>
-							<span class="col-sub">CPU / Avg</span>
+							<span class="col-label">CPU</span>
+							<span class="col-sub">comp (Δ) / base</span>
 						</div>
 					</th>
 					<th class="col-num">
 						<div class="col-header">
-							<span class="col-label">{comparisonLabel}</span>
-							<span class="col-sub">CPU / Avg</span>
+							<span class="col-label">Avg</span>
+							<span class="col-sub">comp / base</span>
 						</div>
 					</th>
-					<th class="col-delta">
+					<th class="col-num">
 						<div class="col-header">
-							<span class="col-label">Delta</span>
-							<span class="col-sub">∆ CPU / %</span>
+							<span class="col-label">Calls</span>
+							<span class="col-sub">comp (Δ) / base</span>
+						</div>
+					</th>
+					<th class="col-num">
+						<div class="col-header">
+							<span class="col-label">Min</span>
+							<span class="col-sub">comp / base</span>
+						</div>
+					</th>
+					<th class="col-num">
+						<div class="col-header">
+							<span class="col-label">Max</span>
+							<span class="col-sub">comp / base</span>
 						</div>
 					</th>
 				</tr>
@@ -203,18 +215,10 @@
 	}
 
 	.col-func {
-		width: 28%;
 		min-width: 180px;
 	}
 
 	.col-num {
-		width: 16%;
-		text-align: right;
-		padding-right: 1rem;
-	}
-
-	.col-delta {
-		width: 24%;
 		text-align: right;
 		padding-right: 1rem;
 	}

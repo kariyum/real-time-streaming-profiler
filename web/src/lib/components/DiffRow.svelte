@@ -24,28 +24,31 @@
 		return Math.ceil(n);
 	}
 
+	function formatPct(pct: number | null | undefined): string {
+		if (pct == null) return '';
+		const sign = pct >= 0 ? '+' : '';
+		return `${sign}${Math.round(pct)}%`;
+	}
+
 	let hasContent = $derived(item.baseline || item.comparison);
 
 	let rowClass = $derived.by(() => {
 		if (item.status === 'added') return 'row-added';
 		if (item.status === 'removed') return 'row-removed';
-		if (item.status === 'changed') {
-			if (item.delta && item.delta.cpuTimePct < 0) return 'row-improved';
+		if (item.status === 'changed' && item.delta) {
+			if (item.delta.cpuTimePct < 0) return 'row-improved';
 			return 'row-regressed';
 		}
 		return '';
 	});
-
-	function deltaStr(val: number | null | undefined, valPct: number | null | undefined): string {
-		if (val === null || val === undefined) return '';
-		const sign = val >= 0 ? '+' : '';
-		return `${sign}${format(val)} / ${sign}${Math.round(valPct ?? 0)}%`;
-	}
 </script>
 
 {#if hasContent}
-	<tr class="diff-row {rowClass}" class:has-children={item.children.length > 0}
-	onclick={item.children.length > 0 ? () => toggle() : undefined}>
+	<tr
+		class="diff-row {rowClass}"
+		class:has-children={item.children.length > 0}
+		onclick={item.children.length > 0 ? () => toggle() : undefined}
+	>
 		<td class="col-func" class:dense={depth > 0}>
 			<div style:--ml={(depth * 20).toString() + 'px'} class="func-name-container">
 				{#if item.children.length > 0}
@@ -67,44 +70,96 @@
 						<span class="feeder-badge">{item.comparison.feederId}</span>
 					{/if}
 					<span class="func-id">{item.baseline?.fnId ?? item.comparison?.fnId ?? ''}</span>
+					{#if item.status === 'added'}
+						<span class="badge badge-new">NEW</span>
+					{:else if item.status === 'removed'}
+						<span class="badge badge-removed">REMOVED</span>
+					{/if}
 				</div>
 			</div>
 		</td>
 
 		<td class="col-num">
-			{#if item.baseline}
-				<span class="val">{format(item.baseline.cpuTime)}</span>
-				<span class="sub">{format(item.baseline.average)}</span>
+			{#if item.comparison}
+				<span class="val">
+					{format(item.comparison.cpuTime)}
+				</span>
 			{:else}
 				<span class="val dim">—</span>
+			{/if}
+
+			{#if item.baseline}
+				<span class="sub">{format(item.baseline.cpuTime)}</span>
+			{:else}
+				<span class="sub dim">—</span>
+			{/if}
+
+			{#if item.delta}
+				{@const pct = item.delta.cpuTimePct}
+				{#if Math.abs(pct) > 1}
+					{#if pct < 0}
+						<ArrowDown size="10" />
+					{:else}
+						<ArrowUp size="10" />
+					{/if}
+				{/if}
+				<span class="delta" class:improved={pct < 0} class:regressed={pct > 0}
+					>{formatPct(pct)}</span
+				>
+			{/if}
+		</td>
+
+		<td class="col-num">
+			{#if item.comparison}
+				<span class="val">{format(item.comparison.average)}</span>
+			{:else}
+				<span class="val dim">—</span>
+			{/if}
+			{#if item.baseline}
+				<span class="sub">{format(item.baseline.average)}</span>
+			{:else}
 				<span class="sub dim">—</span>
 			{/if}
 		</td>
 
 		<td class="col-num">
 			{#if item.comparison}
-				<span class="val">{format(item.comparison.cpuTime)}</span>
-				<span class="sub">{format(item.comparison.average)}</span>
+				<span class="val">
+					{item.comparison.nbCalls}
+				</span>
 			{:else}
 				<span class="val dim">—</span>
+			{/if}
+			{#if item.baseline}
+				<span class="sub">{item.baseline.nbCalls}</span>
+			{:else}
 				<span class="sub dim">—</span>
 			{/if}
 		</td>
 
-		<td class="col-delta">
-			{#if item.delta}
-				<span class="delta-val" class:positive={item.delta.cpuTimePct < 0} class:negative={item.delta.cpuTimePct > 0}>
-					{#if item.delta.cpuTimePct < -1}
-						<ArrowDown size="14" />
-					{:else if item.delta.cpuTimePct > 1}
-						<ArrowUp size="14" />
-					{/if}
-					{deltaStr(item.delta.cpuTime, item.delta.cpuTimePct)}
-				</span>
-			{:else if item.status === 'added'}
-				<span class="badge badge-new">NEW</span>
-			{:else if item.status === 'removed'}
-				<span class="badge badge-removed">REMOVED</span>
+		<td class="col-num">
+			{#if item.comparison}
+				<span class="val">{format(item.comparison.min)}</span>
+			{:else}
+				<span class="val dim">—</span>
+			{/if}
+			{#if item.baseline}
+				<span class="sub">{format(item.baseline.min)}</span>
+			{:else}
+				<span class="sub dim">—</span>
+			{/if}
+		</td>
+
+		<td class="col-num">
+			{#if item.comparison}
+				<span class="val">{format(item.comparison.max)}</span>
+			{:else}
+				<span class="val dim">—</span>
+			{/if}
+			{#if item.baseline}
+				<span class="sub">{format(item.baseline.max)}</span>
+			{:else}
+				<span class="sub dim">—</span>
 			{/if}
 		</td>
 	</tr>
@@ -146,21 +201,13 @@
 	}
 
 	.col-func {
-		width: 28%;
 		min-width: 180px;
 	}
 
 	.col-num {
-		width: 16%;
 		text-align: right;
-		padding-right: 1rem;
+		padding-right: 0.75rem;
 		vertical-align: middle;
-	}
-
-	.col-delta {
-		width: 24%;
-		text-align: right;
-		padding-right: 1rem;
 	}
 
 	.func-name-container {
@@ -222,14 +269,12 @@
 		font-family: 'JetBrains Mono', monospace;
 		font-size: 0.82rem;
 		font-weight: 600;
-		display: block;
 	}
 
 	.sub {
 		font-family: 'JetBrains Mono', monospace;
 		font-size: 0.68rem;
 		color: var(--font-muted);
-		display: block;
 		margin-top: 0.1rem;
 	}
 
@@ -237,25 +282,18 @@
 		color: var(--font-muted) !important;
 	}
 
-	.delta-val {
+	.delta {
 		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.78rem;
+		font-size: 0.65rem;
 		font-weight: 600;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-
-		:global(svg) {
-			width: 0.8rem;
-			height: 0.8rem;
-		}
+		margin-left: 0.25rem;
 	}
 
-	.positive {
+	.improved {
 		color: var(--success);
 	}
 
-	.negative {
+	.regressed {
 		color: var(--danger);
 	}
 

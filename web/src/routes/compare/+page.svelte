@@ -8,11 +8,26 @@
 	import type { EnhancedMetric } from '$lib/types';
 	import { untrack } from 'svelte';
 
-	let diffResult = $state<any>(null);
+	let rawBaseline = $state<EnhancedMetric[] | null>(null);
+	let rawComparison = $state<EnhancedMetric[] | null>(null);
 	let baselineLabel = $state('');
 	let comparisonLabel = $state('');
 	let isLoading = $state(true);
 	let errorMessage = $state<string | undefined>();
+
+	let diffResult = $derived.by(() => {
+		if (!rawBaseline || !rawComparison) return null;
+		return diffTrees(processForDiff(rawBaseline), processForDiff(rawComparison));
+	});
+
+	function handleSwap() {
+		const tmpMetrics = rawBaseline;
+		rawBaseline = rawComparison;
+		rawComparison = tmpMetrics;
+		const tmpLabel = baselineLabel;
+		baselineLabel = comparisonLabel;
+		comparisonLabel = tmpLabel;
+	}
 
 	$effect.pre(() => {
 		const baselineParam = page.url.searchParams.get('baseline');
@@ -32,9 +47,8 @@
 					}
 					baselineLabel = baselineData.label;
 					comparisonLabel = comparisonData.label;
-					const processedBaseline = processForDiff(baselineData.metrics);
-					const processedComparison = processForDiff(comparisonData.metrics);
-					diffResult = diffTrees(processedBaseline, processedComparison);
+					rawBaseline = baselineData.metrics;
+					rawComparison = comparisonData.metrics;
 					isLoading = false;
 				})
 				.catch((e) => {
@@ -93,7 +107,7 @@
 			<a href="/" class="back-link">Return to home</a>
 		</div>
 	{:else if diffResult}
-		<DiffTable {diffResult} {baselineLabel} {comparisonLabel} />
+		<DiffTable {diffResult} {baselineLabel} {comparisonLabel} onSwap={handleSwap} />
 	{/if}
 </div>
 
