@@ -81,14 +81,11 @@ export type EnhancedMetric = {
 export type DiffStatus = 'same' | 'changed' | 'added' | 'removed';
 
 export type DeltaMetrics = {
-	cpuTime: number;
-	cpuTimePct: number;
-	average: number;
-	averagePct: number;
-	nbCalls: number;
-	nbCallsPct: number;
-	selfTime: number;
-	selfTimePct: number;
+	nbCalls: DeltaMetricDiffSimple;
+	average: DeltaMetricDiff;
+	min: DeltaMetricDiff;
+	max: DeltaMetricDiff;
+	cpuTime: DeltaMetricDiff;
 };
 
 export type DiffMetric = {
@@ -97,6 +94,23 @@ export type DiffMetric = {
 	delta: DeltaMetrics | null;
 	status: DiffStatus;
 	children: DiffMetric[];
+};
+
+export type DeltaMetricType = 'simple' | 'pct';
+
+export type DeltaMetricDiff = {
+	type: DeltaMetricType;
+	baseline: number;
+	comparison: number;
+	delta: number;
+	pct: number;
+};
+
+export type DeltaMetricDiffSimple = {
+	type: DeltaMetricType;
+	baseline: number;
+	comparison: number;
+	delta: number;
 };
 
 export type DiffResult = {
@@ -109,6 +123,81 @@ export type DiffResult = {
 		removed: number;
 	};
 };
+
+export const DeltaMetricDiffSimpleSchema = z.object({
+	baseline: z.number(),
+	comparison: z.number(),
+	delta: z.number()
+});
+
+export const DeltaMetricDiffSchema = z.object({
+	baseline: z.number(),
+	comparison: z.number(),
+	delta: z.number(),
+	pct: z.number()
+});
+
+export const DeltaMetricsSchema = z.object({
+	nbCalls: DeltaMetricDiffSimpleSchema,
+	average: DeltaMetricDiffSchema,
+	min: DeltaMetricDiffSchema,
+	max: DeltaMetricDiffSchema,
+	cpuTime: DeltaMetricDiffSchema
+});
+
+export const EnhancedMetricSchema: z.ZodType<EnhancedMetric> = z.object({
+	id: z.string(),
+	fnId: z.string(),
+	caller: z.string().nullable(),
+	average: z.number(),
+	min: z.number(),
+	max: z.number(),
+	nbCalls: z.number(),
+	cpuTime: z.number(),
+	feederId: z.string(),
+	selfTime: z.number(),
+	selfTimePct: z.number(),
+	children: z.array(z.lazy(() => EnhancedMetricSchema))
+});
+
+export const DiffMetricSameSchema = z.object({
+	baseline: EnhancedMetricSchema,
+	comparison: EnhancedMetricSchema,
+	delta: DeltaMetricsSchema,
+	status: z.literal('same'),
+	children: z.array(z.lazy(() => DiffMetricSchema))
+});
+
+export const DiffMetricChangedSchema = z.object({
+	baseline: EnhancedMetricSchema,
+	comparison: EnhancedMetricSchema,
+	delta: DeltaMetricsSchema,
+	status: z.literal('changed'),
+	children: z.array(z.lazy(() => DiffMetricSchema))
+});
+
+export const DiffMetricRemovedSchema = z.object({
+	baseline: EnhancedMetricSchema,
+	comparison: z.null(),
+	delta: z.null(),
+	status: z.literal('removed'),
+	children: z.array(z.lazy(() => DiffMetricSchema))
+});
+
+export const DiffMetricAddedSchema = z.object({
+	baseline: z.null(),
+	comparison: EnhancedMetricSchema,
+	delta: z.null(),
+	status: z.literal('added'),
+	children: z.array(z.lazy(() => DiffMetricSchema))
+});
+
+export const DiffMetricSchema: z.ZodType<DiffMetric> = z.discriminatedUnion('status', [
+	DiffMetricSameSchema,
+	DiffMetricChangedSchema,
+	DiffMetricRemovedSchema,
+	DiffMetricAddedSchema
+]);
 
 export type BenchmarkSource = {
 	type: 'local' | 'cloud' | 'live';

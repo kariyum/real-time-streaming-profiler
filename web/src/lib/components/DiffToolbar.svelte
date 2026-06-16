@@ -120,7 +120,7 @@
 		font-size: 0.78rem;
 		font-weight: 600;
 		color: var(--font-secondary);
-		max-width: 160px;
+		max-width: 150ch;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

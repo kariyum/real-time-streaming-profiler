@@ -1,27 +1,65 @@
+<script lang="ts" module>
+	export function expand() {
+		initialShow = true;
+		subs.forEach((f) => f(true));
+	}
+	export function collapse() {
+		initialShow = false;
+		subs.forEach((f) => f(false));
+	}
+
+	let subs: ((show: boolean) => void)[] = [];
+
+	function onToggle(f: (show: boolean) => void) {
+		subs.push(f);
+		return () => {
+			subs = subs.filter((handler) => handler != f);
+		};
+	}
+
+	let initialShow: boolean = $state(false);
+</script>
+
 <script lang="ts">
-	import type { DiffMetric } from '$lib/types';
+	import type {
+		DeltaMetricDiff,
+		DeltaMetricDiffSimple,
+		DeltaMetrics,
+		DiffMetric
+	} from '$lib/types';
+	import { DiffMetricSchema } from '$lib/types';
+	import { onMount } from 'svelte';
+	import { z } from 'zod';
+	import Self from './DiffRow.svelte';
 	import DownArrow from './DownArrow.svelte';
 	import RightArrow from './RightArrow.svelte';
-	import Self from './DiffRow.svelte';
-	import { ArrowUp, ArrowDown } from '@lucide/svelte';
 
 	let {
 		diffMetric: item,
 		depth
 	}: {
-		diffMetric: DiffMetric;
+		diffMetric: z.infer<typeof DiffMetricSchema>;
 		depth: number;
 	} = $props();
 
-	let showChildren = $state(false);
+	let showChildren = $state(initialShow);
+
+	onMount(() => {
+		const unsub = onToggle((show) => {
+			showChildren = show;
+		});
+
+		return unsub;
+	});
 
 	function toggle() {
 		showChildren = !showChildren;
+		initialShow = false;
 	}
 
 	function format(n: number | null) {
 		if (n === null) return '—';
-		return Math.ceil(n);
+		return Math.round(n * 100) / 100;
 	}
 
 	function formatPct(pct: number | null | undefined): string {
@@ -36,12 +74,84 @@
 		if (item.status === 'added') return 'row-added';
 		if (item.status === 'removed') return 'row-removed';
 		if (item.status === 'changed' && item.delta) {
-			if (item.delta.cpuTimePct < 0) return 'row-improved';
+			if (item.delta.cpuTime.pct < 0) return 'row-improved';
 			return 'row-regressed';
 		}
 		return '';
 	});
+
+	let columns: (keyof DeltaMetrics)[] = ['nbCalls', 'average', 'min', 'max', 'cpuTime'];
+	let isExpanded: boolean = $state(false);
 </script>
+
+{#snippet cols(metric: DiffMetric)}
+	{#each columns as col}
+		{#if metric.delta}
+			<td class="col-num">
+				{#if metric.delta[col].type === 'simple'}
+					{@render renderSimpleDiffMetric(metric.delta[col] as DeltaMetricDiffSimple)}
+				{:else if metric.delta[col].type === 'pct'}
+					{@render renderDeltaDiffMetric(metric.delta[col] as DeltaMetricDiff)}
+				{:else}
+					unknown type expected 'simple' or 'pct'
+				{/if}
+			</td>
+		{:else if metric.baseline}
+			<td class="col-num">
+				<span class="val dim">NA</span>
+				/
+				<span class="val">{format(metric.baseline[col])}</span>
+			</td>
+		{:else if metric.comparison}
+			<td class="col-num">
+				<span class="val">{format(metric.comparison[col])}</span>
+				/
+				<span class="val dim">NA</span>
+			</td>
+		{:else}
+			<td> Unexpected case {JSON.stringify(metric)} </td>
+		{/if}
+	{/each}
+{/snippet}
+
+{#snippet renderDeltaDiffMetric(metric: DeltaMetricDiff)}
+	<span class="val">
+		{format(metric.comparison)}
+	</span>
+	<span class="delta sign" class:improved={metric.delta < 0} class:regressed={metric.delta > 0}
+		>{format(Math.abs(metric.delta))}</span
+	>
+
+	<span class="delta" class:improved={metric.pct < 0} class:regressed={metric.pct > 0}
+		>({formatPct(metric.pct)})</span
+	>
+{/snippet}
+
+{#snippet renderSimpleDiffMetric(metric: DeltaMetricDiffSimple)}
+	<span class="val">
+		{format(metric.comparison)}
+	</span>
+	{#if metric.delta !== 0}
+		<span class="delta sign" class:improved={metric.delta < 0} class:regressed={metric.delta > 0}
+			>{format(Math.abs(metric.delta))}</span
+		>
+	{/if}
+{/snippet}
+
+{#snippet renderFunctionId(id: string)}
+	<span class="func-id" class:ellipsis={!isExpanded}>{id}</span>
+	{#if id.length > 300}
+		<div>
+			<button class="readmore" onclick={() => (isExpanded = !isExpanded)}>
+				{#if isExpanded}
+					collapse
+				{:else}
+					read more...
+				{/if}
+			</button>
+		</div>
+	{/if}
+{/snippet}
 
 {#if hasContent}
 	<tr
@@ -69,99 +179,19 @@
 					{#if depth === 0 && !item.baseline && item.comparison}
 						<span class="feeder-badge">{item.comparison.feederId}</span>
 					{/if}
-					<span class="func-id">{item.baseline?.fnId ?? item.comparison?.fnId ?? ''}</span>
-					{#if item.status === 'added'}
-						<span class="badge badge-new">NEW</span>
-					{:else if item.status === 'removed'}
-						<span class="badge badge-removed">REMOVED</span>
-					{/if}
+					{@render renderFunctionId(item.baseline?.fnId ?? item.comparison?.fnId ?? '???')}
+					<div>
+						{#if item.status === 'added'}
+							<span class="badge badge-new">NEW</span>
+						{:else if item.status === 'removed'}
+							<span class="badge badge-removed">REMOVED</span>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</td>
 
-		<td class="col-num">
-			{#if item.comparison}
-				<span class="val">
-					{format(item.comparison.cpuTime)}
-				</span>
-			{:else}
-				<span class="val dim">—</span>
-			{/if}
-
-			{#if item.baseline}
-				<span class="sub">{format(item.baseline.cpuTime)}</span>
-			{:else}
-				<span class="sub dim">—</span>
-			{/if}
-
-			{#if item.delta}
-				{@const pct = item.delta.cpuTimePct}
-				{#if Math.abs(pct) > 1}
-					{#if pct < 0}
-						<ArrowDown size="10" />
-					{:else}
-						<ArrowUp size="10" />
-					{/if}
-				{/if}
-				<span class="delta" class:improved={pct < 0} class:regressed={pct > 0}
-					>{formatPct(pct)}</span
-				>
-			{/if}
-		</td>
-
-		<td class="col-num">
-			{#if item.comparison}
-				<span class="val">{format(item.comparison.average)}</span>
-			{:else}
-				<span class="val dim">—</span>
-			{/if}
-			{#if item.baseline}
-				<span class="sub">{format(item.baseline.average)}</span>
-			{:else}
-				<span class="sub dim">—</span>
-			{/if}
-		</td>
-
-		<td class="col-num">
-			{#if item.comparison}
-				<span class="val">
-					{item.comparison.nbCalls}
-				</span>
-			{:else}
-				<span class="val dim">—</span>
-			{/if}
-			{#if item.baseline}
-				<span class="sub">{item.baseline.nbCalls}</span>
-			{:else}
-				<span class="sub dim">—</span>
-			{/if}
-		</td>
-
-		<td class="col-num">
-			{#if item.comparison}
-				<span class="val">{format(item.comparison.min)}</span>
-			{:else}
-				<span class="val dim">—</span>
-			{/if}
-			{#if item.baseline}
-				<span class="sub">{format(item.baseline.min)}</span>
-			{:else}
-				<span class="sub dim">—</span>
-			{/if}
-		</td>
-
-		<td class="col-num">
-			{#if item.comparison}
-				<span class="val">{format(item.comparison.max)}</span>
-			{:else}
-				<span class="val dim">—</span>
-			{/if}
-			{#if item.baseline}
-				<span class="sub">{format(item.baseline.max)}</span>
-			{:else}
-				<span class="sub dim">—</span>
-			{/if}
-		</td>
+		{@render cols(item)}
 	</tr>
 
 	{#if showChildren && item.children.length > 0}
@@ -172,6 +202,19 @@
 {/if}
 
 <style>
+	.readmore {
+		border: none;
+		background-color: transparent;
+		padding: 0;
+		margin: 0;
+		text-decoration: underline;
+	}
+	.ellipsis {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		width: 70ch;
+	}
 	.diff-row {
 		transition: background-color var(--transition-fast);
 		border-bottom: 1px solid var(--table-border);
@@ -197,17 +240,17 @@
 		padding: 0.75rem 0.75rem;
 		border-bottom: 1px solid var(--table-border);
 		vertical-align: middle;
-		white-space: nowrap;
 	}
 
 	.col-func {
-		min-width: 180px;
+		word-break: break-all;
 	}
 
 	.col-num {
 		text-align: right;
 		padding-right: 0.75rem;
 		vertical-align: middle;
+		white-space: nowrap;
 	}
 
 	.func-name-container {
@@ -291,10 +334,16 @@
 
 	.improved {
 		color: var(--success);
+		--content: '-';
 	}
 
 	.regressed {
 		color: var(--danger);
+		--content: '+';
+	}
+
+	.sign::before {
+		content: var(--content);
 	}
 
 	.badge {

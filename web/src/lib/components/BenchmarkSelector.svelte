@@ -11,6 +11,7 @@
 
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { closeOnClickOutisde } from '$lib/attachments/CloseOnClickOutside';
 	import { dashboardsRepo, Database } from '$lib/db';
 	import { eventStreamState } from '$lib/eventSource.svelte.ts';
@@ -44,7 +45,6 @@
 			if (db.db) {
 				localDashboards = await dashboardsRepo.getAllDashboards(db.db);
 				localDashboards.sort((a, b) => {
-					console.log(a);
 					return a.entity.date.getTime() - b.entity.date.getTime();
 				});
 			}
@@ -81,7 +81,7 @@
 		const bId = baseline.type === 'live' ? 'live' : `${baseline.type}:${baseline.id}`;
 		const cId = comparison.type === 'live' ? 'live' : `${comparison.type}:${comparison.id}`;
 		dialog.close();
-		goto(`/compare?baseline=${bId}&comparison=${cId}`);
+		goto(resolve(`/compare?baseline=${bId}&comparison=${cId}`));
 	}
 
 	function formatDate(date: any): string {
