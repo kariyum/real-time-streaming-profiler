@@ -27,7 +27,6 @@ export class Database {
 			this.db = DBOpenRequest.result;
 			const upgradeTransaction = DBOpenRequest.transaction;
 			this.db.onerror = (event) => {
-				console.log('Error loading database.');
 			};
 			if (upgradeTransaction) {
 				this.migrate(
@@ -59,8 +58,6 @@ export class Database {
 		oldVersion: number,
 		newVersion?: number
 	) {
-		console.log('old version = ', oldVersion);
-		console.log('new version = ', newVersion);
 		for (let start = oldVersion + 1; start <= (newVersion ?? oldVersion); start++) {
 			switch (start) {
 				case 1:
@@ -198,7 +195,6 @@ export const dashboardsRepo = {
 
 	insertDashboard: (db: IDBDatabase, data: DashboardEntityFirestore) => {
 		return new Promise((resolve, reject) => {
-			console.log('INSERTING', JSON.parse(JSON.stringify(data)));
 			const transaction = db.transaction('dashboards', 'readwrite');
 			const result = transaction.objectStore('dashboards').put(JSON.parse(JSON.stringify(data)));
 			result.onerror = (event) => {
@@ -206,7 +202,6 @@ export const dashboardsRepo = {
 				reject(event);
 			};
 			result.onsuccess = () => {
-				// console.log("User program inserted", event?.target.result);
 				resolve('OK');
 			};
 		});

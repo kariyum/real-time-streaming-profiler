@@ -3,6 +3,7 @@
 	import DiffToolbar from './DiffToolbar.svelte';
 	import DiffRow from './DiffRow.svelte';
 	import { ArrowUp, ArrowDown } from '@lucide/svelte';
+	import { expand, collapse } from './DiffRow.svelte';
 
 	let {
 		diffResult,
@@ -17,7 +18,6 @@
 	} = $props();
 
 	let filter: DiffStatus | 'all' = $state('all');
-	let allExpanded = $state(false);
 
 	let filteredNodes = $derived.by(() => {
 		if (filter === 'all') return diffResult.rootNodes;
@@ -38,11 +38,11 @@
 	}
 
 	function expandAll() {
-		allExpanded = true;
+		expand();
 	}
 
 	function collapseAll() {
-		allExpanded = false;
+		collapse();
 	}
 
 	function swap() {
@@ -64,10 +64,14 @@
 	<div class="summary-bar">
 		<span class="stat">Total: <strong>{diffResult.summary.totalFunctions}</strong></span>
 		{#if diffResult.summary.improved > 0}
-			<span class="stat improved"><ArrowDown size="12" /> <strong>{diffResult.summary.improved}</strong> improved</span>
+			<span class="stat improved"
+				><ArrowDown size="12" /> <strong>{diffResult.summary.improved}</strong> improved</span
+			>
 		{/if}
 		{#if diffResult.summary.regressed > 0}
-			<span class="stat regressed"><ArrowUp size="12" /> <strong>{diffResult.summary.regressed}</strong> regressed</span>
+			<span class="stat regressed"
+				><ArrowUp size="12" /> <strong>{diffResult.summary.regressed}</strong> regressed</span
+			>
 		{/if}
 		{#if diffResult.summary.added > 0}
 			<span class="stat added"><strong>{diffResult.summary.added}</strong> added</span>
@@ -84,32 +88,28 @@
 					<th class="col-func">Function</th>
 					<th class="col-num">
 						<div class="col-header">
-							<span class="col-label">CPU</span>
-							<span class="col-sub">comp (Δ) / base</span>
+							<span class="col-label">Calls</span>
 						</div>
 					</th>
 					<th class="col-num">
 						<div class="col-header">
 							<span class="col-label">Avg</span>
-							<span class="col-sub">comp / base</span>
-						</div>
-					</th>
-					<th class="col-num">
-						<div class="col-header">
-							<span class="col-label">Calls</span>
-							<span class="col-sub">comp (Δ) / base</span>
 						</div>
 					</th>
 					<th class="col-num">
 						<div class="col-header">
 							<span class="col-label">Min</span>
-							<span class="col-sub">comp / base</span>
 						</div>
 					</th>
 					<th class="col-num">
 						<div class="col-header">
 							<span class="col-label">Max</span>
-							<span class="col-sub">comp / base</span>
+						</div>
+					</th>
+
+					<th class="col-num">
+						<div class="col-header">
+							<span class="col-label">CPU</span>
 						</div>
 					</th>
 				</tr>
@@ -122,9 +122,7 @@
 		</table>
 
 		{#if filteredNodes.length === 0}
-			<div class="empty-diff">
-				No functions match the current filter.
-			</div>
+			<div class="empty-diff">No functions match the current filter.</div>
 		{/if}
 	</div>
 </div>
@@ -162,22 +160,30 @@
 
 	.improved {
 		color: var(--success);
-		strong { color: var(--success); }
+		strong {
+			color: var(--success);
+		}
 	}
 
 	.regressed {
 		color: var(--danger);
-		strong { color: var(--danger); }
+		strong {
+			color: var(--danger);
+		}
 	}
 
 	.added {
 		color: var(--info);
-		strong { color: var(--info); }
+		strong {
+			color: var(--info);
+		}
 	}
 
 	.removed {
 		color: var(--font-muted);
-		strong { color: var(--font-muted); }
+		strong {
+			color: var(--font-muted);
+		}
 	}
 
 	.table-wrapper {
@@ -211,11 +217,6 @@
 		letter-spacing: 0.06em;
 		color: var(--font-secondary);
 		border-bottom: 1px solid var(--table-border);
-		white-space: nowrap;
-	}
-
-	.col-func {
-		min-width: 180px;
 	}
 
 	.col-num {
@@ -231,13 +232,6 @@
 
 	.col-label {
 		font-size: 0.68rem;
-	}
-
-	.col-sub {
-		font-size: 0.58rem;
-		color: var(--font-muted);
-		font-weight: 500;
-		letter-spacing: 0.04em;
 	}
 
 	.empty-diff {

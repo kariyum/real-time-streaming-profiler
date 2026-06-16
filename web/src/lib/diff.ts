@@ -1,6 +1,6 @@
 import type { EnhancedMetric, DiffMetric, DiffResult, DeltaMetrics, DiffStatus } from './types';
 
-const THRESHOLD_PCT = 1;
+const EPSILON = 1;
 
 function makeKey(metric: EnhancedMetric): string {
 	return `${metric.feederId}-${metric.fnId}`;
@@ -26,27 +26,54 @@ function computeDelta(baseline: EnhancedMetric, comparison: EnhancedMetric): Del
 	const average = comparison.average - baseline.average;
 	const averagePct = baseline.average !== 0 ? (average / baseline.average) * 100 : 0;
 	const nbCalls = comparison.nbCalls - baseline.nbCalls;
-	const nbCallsPct = baseline.nbCalls !== 0 ? (nbCalls / baseline.nbCalls) * 100 : 0;
-	const selfTime = comparison.selfTime - baseline.selfTime;
-	const selfTimePct = baseline.selfTime !== 0 ? (selfTime / baseline.selfTime) * 100 : 0;
+	const min = comparison.min - baseline.min;
+	const minPct = baseline.min !== 0 ? (min / baseline.min) * 100 : 0; // 4 - 3 = 1 | 1 / 3 * 100 = 33%
+	const max = comparison.max - baseline.max;
+	const maxPct = baseline.max !== 0 ? (max / baseline.max) * 100 : 0;
 
 	return {
-		cpuTime,
-		cpuTimePct,
-		average,
-		averagePct,
-		nbCalls,
-		nbCallsPct,
-		selfTime,
-		selfTimePct
+		cpuTime: {
+			type: 'pct',
+			comparison: comparison.cpuTime,
+			baseline: baseline.cpuTime,
+			delta: cpuTime,
+			pct: cpuTimePct
+		},
+		average: {
+			type: 'pct',
+			comparison: comparison.average,
+			baseline: baseline.average,
+			delta: average,
+			pct: averagePct
+		},
+		nbCalls: {
+			type: 'simple',
+			comparison: comparison.nbCalls,
+			baseline: baseline.nbCalls,
+			delta: nbCalls
+		},
+		min: {
+			type: 'pct',
+			comparison: comparison.min,
+			baseline: baseline.min,
+			delta: min,
+			pct: minPct
+		},
+		max: {
+			type: 'pct',
+			comparison: comparison.max,
+			baseline: baseline.max,
+			delta: max,
+			pct: maxPct
+		}
 	};
 }
 
 function determineStatus(delta: DeltaMetrics): DiffStatus {
-	if (Math.abs(delta.cpuTimePct) <= THRESHOLD_PCT && Math.abs(delta.averagePct) <= THRESHOLD_PCT) {
+	if (Math.abs(delta.cpuTime.pct) <= EPSILON && Math.abs(delta.average.pct) <= EPSILON) {
 		return 'same';
 	}
-	return delta.cpuTimePct < 0 ? 'changed' : 'changed';
+	return 'changed';
 }
 
 function buildDiffTree(
@@ -57,7 +84,10 @@ function buildDiffTree(
 	const result: DiffMetric[] = [];
 	const processed = new Set<string>();
 
-	function buildNode(baselineNode: EnhancedMetric | null, comparisonNode: EnhancedMetric | null): DiffMetric {
+	function buildNode(
+		baselineNode: EnhancedMetric | null,
+		comparisonNode: EnhancedMetric | null
+	): DiffMetric {
 		let status: DiffStatus;
 		let delta: DeltaMetrics | null = null;
 		let baselineMetric: EnhancedMetric | null = baselineNode;
@@ -135,7 +165,7 @@ function computeSummary(nodes: DiffMetric[]): DiffResult['summary'] {
 			if (node.status === 'added') added++;
 			else if (node.status === 'removed') removed++;
 			else if (node.status === 'changed') {
-				if (node.delta && node.delta.cpuTimePct < 0) improved++;
+				if (node.delta && node.delta.cpuTime.pct < 0) improved++;
 				else regressed++;
 			}
 			if (node.children.length > 0) {

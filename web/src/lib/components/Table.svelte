@@ -90,10 +90,6 @@
 			<Minimize2 size="14" />
 			Collapse All
 		</button>
-		<button onclick={() => (showCompare = true)} aria-label="Compare benchmarks">
-			<ArrowLeftRight size="14" />
-			Compare
-		</button>
 	</div>
 
 	<div class="toolbar-right">
@@ -135,10 +131,7 @@
 	</table>
 </div>
 
-<!-- <BenchmarkSelector /> -->
-
 <style>
-	/* Toolbar styling */
 	.table-toolbar {
 		display: flex;
 		justify-content: space-between;
@@ -155,7 +148,6 @@
 		align-items: center;
 	}
 
-	/* Scrollable Table Container */
 	.table-wrapper {
 		width: 100%;
 		overflow-x: auto;

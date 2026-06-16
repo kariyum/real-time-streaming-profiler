@@ -19,17 +19,14 @@
 		});
 		unsub = streamState.subscribe((fullData) => {
 			metrics = fullData;
-			console.log('full data is', fullData);
 			obsolete = true;
 		});
 		enhancedMetrics = computeChildren(processData(metrics));
 		setIntervalId = setInterval(() => {
 			if (obsolete == true) {
-				console.log('UPDATING.', metrics.length);
 				let start = performance.now();
 				enhancedMetrics = computeChildren(processData(metrics));
 				let end = performance.now();
-				console.log('TOOK: ', end - start);
 				obsolete = false;
 			}
 		}, 1000);

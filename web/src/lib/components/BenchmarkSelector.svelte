@@ -44,7 +44,6 @@
 			if (db.db) {
 				localDashboards = await dashboardsRepo.getAllDashboards(db.db);
 				localDashboards.sort((a, b) => {
-					console.log(a);
 					return a.entity.date.getTime() - b.entity.date.getTime();
 				});
 			}
