@@ -26,23 +26,25 @@ pub struct SinkManager {
 impl Handler<FeederMessage> for SinkManager {
     type Result = ();
     fn handle(&mut self, msg: FeederMessage, _ctx: &mut Self::Context) -> Self::Result {
-        for ws in &self.ws {
-            match &msg {
-                FeederMessage::Observation { .. } => (),
-                FeederMessage::NewFeeder { name, id } => {
-                    self.online_feeders.insert(FeederId {
-                        id: id.clone(),
-                        name: name.clone(),
-                    });
-                }
-                FeederMessage::RageQuitFeeder { name, id } => {
-                    self.online_feeders.remove(&FeederId {
-                        id: id.to_string(),
-                        name: name.to_string(),
-                    });
-                }
-                FeederMessage::OnlineFeeders { .. } => (),
+        match &msg {
+            FeederMessage::Observation { .. } => (),
+            FeederMessage::NewFeeder { name, id } => {
+                info!("New Feeder {}", name);
+                self.online_feeders.insert(FeederId {
+                    id: id.clone(),
+                    name: name.clone(),
+                });
             }
+            FeederMessage::RageQuitFeeder { name, id } => {
+                self.online_feeders.remove(&FeederId {
+                    id: id.to_string(),
+                    name: name.to_string(),
+                });
+            }
+            FeederMessage::OnlineFeeders { .. } => (),
+        }
+
+        for ws in &self.ws {
             ws.recipient.do_send(msg.clone());
         }
     }
