@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::messages::FeederMessage;
 
-const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(10);
+const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub struct Feeder {
@@ -76,14 +76,14 @@ impl StreamHandler<Result<Message, ProtocolError>> for Feeder {
             Ok(msg) => msg,
         };
 
-        self.hb = Instant::now();
-
         match msg {
             Message::Text(json_str) => self.handle_text_message(json_str.to_string()),
             Message::Binary(_) => (),
             Message::Continuation(_) => ctx.stop(),
             Message::Ping(bytes) => ctx.pong(&bytes),
-            Message::Pong(_) => (),
+            Message::Pong(_) => {
+                self.hb = Instant::now();
+            }
             Message::Close(close_reason) => {
                 ctx.close(close_reason);
                 ctx.stop();
