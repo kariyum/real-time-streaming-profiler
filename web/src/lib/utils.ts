@@ -57,14 +57,15 @@ export function computeChildren(array: EnhancedMetric[]): EnhancedMetric[] {
 	let lookup: Map<string, EnhancedMetric> = new Map();
 
 	const fnsWithData = new Set(arr.map((a) => a.id));
-	const fnsExecuting = new Set(
+	const missingCallers = new Map<string, EnhancedMetric>(
 		arr
 			.filter((a) => a.caller !== null)
 			.filter((a) => !fnsWithData.has(`${a.feederId}-${a.caller}`))
+			.map((a) => [`${a.feederId}-${a.caller}`, a])
 	);
-	for (const fn of fnsExecuting) {
+	for (const [callerId, fn] of missingCallers) {
 		arr.push({
-			id: `${fn.feederId}-${fn.caller}`,
+			id: callerId,
 			fnId: fn.caller!,
 			caller: null,
 			average: 0,

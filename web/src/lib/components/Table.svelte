@@ -17,7 +17,6 @@
 	let description: string = $state('');
 	let dialog: HTMLDialogElement;
 	let database: Database;
-	let showCompare = $state(false);
 
 	onMount(async () => {
 		if (browser) {
