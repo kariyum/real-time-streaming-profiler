@@ -40,8 +40,8 @@ function computeCpuTime(start_end_times: number[][]): number {
     return total;
 }
 
-function sortByAverage(enchantedMetrics: EnhancedMetric[]): EnhancedMetric[] {
-    return enchantedMetrics.sort((a, b) => b.average - a.average);
+function sortByCPUTime(enchantedMetrics: EnhancedMetric[]): EnhancedMetric[] {
+    return enchantedMetrics.sort((a, b) => b.cpuTime - a.cpuTime);
 }
 
 function copyEnhancedMetric(enhancedMetric: EnhancedMetric): EnhancedMetric {
@@ -157,7 +157,7 @@ export function processData(data: SingleMetricWithSource[]) {
     const millisData = nanosSecondsToMillis(data);
     const metrics = groupSingleMetricsIntoMetric(millisData);
     const enhancedData = enhanceData(metrics);
-    const sorted = sortByAverage(enhancedData);
+    const sorted = sortByCPUTime(enhancedData);
     return sorted;
     // return computeChildren(sorted);
 }
